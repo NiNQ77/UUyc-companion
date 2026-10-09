@@ -9,5 +9,6 @@ let package = Package(
         .executableTarget(name: "vdprobe", dependencies: ["CGVirtualDisplayBridge"]),
         .executableTarget(name: "uuprobe"),
         .executableTarget(name: "uuwatch"),
+        .executableTarget(name: "UUDisplay", dependencies: ["CGVirtualDisplayBridge"]),
     ]
 )
