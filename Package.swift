@@ -10,5 +10,6 @@ let package = Package(
         .executableTarget(name: "uuprobe"),
         .executableTarget(name: "uuwatch"),
         .executableTarget(name: "UUDisplay", dependencies: ["CGVirtualDisplayBridge"]),
+        .executableTarget(name: "dispoff", dependencies: ["CGVirtualDisplayBridge"]),
     ]
 )

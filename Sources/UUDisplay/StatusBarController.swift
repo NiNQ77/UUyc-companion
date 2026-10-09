@@ -35,6 +35,19 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             warn.target = self
             menu.addItem(warn)
         }
+        if store.config.shouldDisablePhysical && !Watchdog.isRunning {
+            let warn = NSMenuItem(title: "⚠️ 看门狗未运行，远程时不会关闭物理屏", action: #selector(openLoginItems), keyEquivalent: "")
+            warn.target = self
+            menu.addItem(warn)
+        }
+        menu.addItem(.separator())
+
+        let restore = action("立即恢复所有屏幕（⌃⌥⌘R）", #selector(restorePhysical))
+        restore.isEnabled = coordinator.display.physicalOff || PhysicalDisplays.pending != nil
+        menu.addItem(restore)
+        let physical = action("远程时关闭物理屏", #selector(toggleDisablePhysical))
+        physical.state = store.config.shouldDisablePhysical ? .on : .off
+        menu.addItem(physical)
         menu.addItem(.separator())
 
         menu.addItem(action("重新配置…", #selector(reconfigure), key: ","))
@@ -73,6 +86,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     }
 
     @objc private func reconfigure() { openWizard() }
+
+    @objc private func restorePhysical() { coordinator.restorePhysical() }
+
+    @objc private func toggleDisablePhysical() { coordinator.setDisablePhysical(!store.config.shouldDisablePhysical) }
+
+    @objc private func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
 
     @objc private func openAX() {
         UUReader.requestTrust()

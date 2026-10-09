@@ -22,17 +22,25 @@ final class Coordinator {
     var connected: Bool { monitor.connected || simulatedName != nil }
 
     func start() {
+        display.shouldDisablePhysical = { [weak self] in self?.physicalDisableAllowed ?? false }
         display.recoverIfNeeded()
         monitor.onConnect = { [weak self] in self?.handleConnect() }
         monitor.onDisconnect = { [weak self] in self?.handleDisconnect() }
         monitor.start()
     }
 
+    /// 开关打开、私有 API 可用、且看门狗健在（兜底就位）时才允许关闭物理屏
+    var physicalDisableAllowed: Bool {
+        store.config.shouldDisablePhysical && PhysicalDisplays.available && Watchdog.isRunning
+    }
+
     var statusText: String {
         if store.config.paused { return "已暂停自动切换" }
         guard connected else { return "等待 UU 连入" }
         let who = controllerName ?? "未知设备"
-        if let c = display.current, display.isActive { return "\(who) 已连入 · 虚拟屏 \(c.sizeLabel)" }
+        if let c = display.current, display.isActive {
+            return "\(who) 已连入 · 虚拟屏 \(c.sizeLabel)\(display.physicalOff ? " · 物理屏已关闭" : "")"
+        }
         return "\(who) 已连入 · 未切换"
     }
 
@@ -148,7 +156,20 @@ final class Coordinator {
         onChange?()
     }
 
-    func shutdown() {
-        display.remove(wait: true)
+    /// 快捷键 ⌃⌥⌘R / 菜单：立即恢复物理屏
+    func restorePhysical() {
+        Log.info("手动恢复物理屏")
+        display.restorePhysicalNow()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.onChange?() }
+    }
+
+    func setDisablePhysical(_ on: Bool) {
+        store.config.disablePhysical = on
+        if on { display.disablePhysicalIfNeeded() } else { display.restorePhysicalNow(override: false) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.onChange?() }
+    }
+
+    func shutdown(completion: @escaping () -> Void) {
+        display.remove(completion: completion)
     }
 }
