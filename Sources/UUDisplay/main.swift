@@ -1,5 +1,6 @@
 // UU远程分辨率伴侣：本机被 UU远程 控制时，按控制端设备自动建虚拟屏并设为主屏，断开后还原
 // 调试：UUDisplay --simulate "<设备名>" [秒数=10]  模拟一次连入/断开（不依赖 UU）
+//      UUDisplay --simulate "A>B" 8            先按 A 建屏，3 秒后识别为 B 重建
 //      UUDisplay --dump-devices                打印从 UU 读到的设备及预填配置
 import AppKit
 
@@ -47,9 +48,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func simulate(name: String, seconds: Double) {
         coordinator.display.recoverIfNeeded()
+        // "A>B"：先按 A 连入，3 秒后识别为 B（模拟名称延迟出现导致的重建）
+        let names = name.components(separatedBy: ">")
         Log.info("模拟连入：\(name)，\(Int(seconds)) 秒后断开")
-        coordinator.simulatedName = name
+        coordinator.simulatedName = names[0]
         coordinator.handleConnect()
+        if names.count > 1 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.coordinator.simulatedName = names[1]
+                self?.coordinator.handleConnect()
+            }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
             self?.coordinator.handleDisconnect()
             self?.coordinator.simulatedName = nil

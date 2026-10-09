@@ -34,7 +34,10 @@ final class DisplayManager {
 
     @discardableResult
     func create(_ cfg: DeviceConfig) -> Bool {
-        remove()
+        // 换设备重建：不做中间还原（否则延迟的还原可能盖掉新屏的主屏设置），沿用最初的原始布局
+        let original = savedOrigins
+        remove(restore: false)
+        savedOrigins = original
         let w = cfg.width, h = cfg.height
         let desc = CGVirtualDisplayDescriptor()
         desc.name = "UUDisplay · \(cfg.name)"
@@ -48,16 +51,14 @@ final class DisplayManager {
 
         let created: CGVirtualDisplay? = autoreleasepool { CGVirtualDisplay(descriptor: desc) }
         guard let display = created else {
-            Log.info("❌ 创建虚拟屏失败（CGVirtualDisplay 返回 nil）")
-            return false
+            return failCreate("❌ 创建虚拟屏失败（CGVirtualDisplay 返回 nil）")
         }
         let settings = CGVirtualDisplaySettings()
         settings.hiDPI = cfg.hiDPI
         let mw = cfg.hiDPI ? w / 2 : w, mh = cfg.hiDPI ? h / 2 : h
         settings.modes = [CGVirtualDisplayMode(width: UInt(mw), height: UInt(mh), refreshRate: 60)]
         guard autoreleasepool(invoking: { display.apply(settings) }) else {
-            Log.info("❌ 虚拟屏 applySettings 失败")
-            return false
+            return failCreate("❌ 虚拟屏 applySettings 失败")
         }
         vd = display
         current = cfg
@@ -76,7 +77,9 @@ final class DisplayManager {
                 else { Log.info("⚠️ 虚拟屏 5 秒内未上线") }
                 return
             }
-            self.savedOrigins = Dictionary(uniqueKeysWithValues: online.filter { $0 != id }.map { ($0, CGDisplayBounds($0).origin) })
+            if self.savedOrigins.isEmpty {
+                self.savedOrigins = Dictionary(uniqueKeysWithValues: online.filter { $0 != id }.map { ($0, CGDisplayBounds($0).origin) })
+            }
             self.writeMarker()
             self.cgQueue.async {
                 let err = DisplayManager.configure { cfg in
@@ -94,8 +97,10 @@ final class DisplayManager {
     }
 
     /// 先释放虚拟屏（系统会自动把主屏交还物理屏），再在后台把物理屏原点还原
-    /// - Parameter wait: 退出时同步等待还原完成（最多 3 秒）
-    func remove(wait: Bool = false) {
+    /// - Parameters:
+    ///   - restore: 是否还原物理屏原点（重建时为 false）
+    ///   - wait: 退出时同步等待还原完成（最多 3 秒）
+    func remove(restore: Bool = true, wait: Bool = false) {
         pendingMain?.cancel()
         pendingMain = nil
         guard let display = vd else { return }
@@ -105,13 +110,27 @@ final class DisplayManager {
         current = nil
         let origins = savedOrigins
         savedOrigins = [:]
+        guard restore else { return }
+        scheduleRestore(origins, wait: wait)
+    }
+
+    private func scheduleRestore(_ origins: [CGDirectDisplayID: CGPoint], wait: Bool = false) {
         try? FileManager.default.removeItem(at: DisplayManager.markerURL)
+        guard !origins.isEmpty else { return }
         let done = DispatchSemaphore(value: 0)
         cgQueue.asyncAfter(deadline: .now() + 0.5) {
             DisplayManager.restoreOrigins(origins)
             done.signal()
         }
         if wait { _ = done.wait(timeout: .now() + 3) }
+    }
+
+    /// 重建时新屏创建失败：旧屏已移除，需把原始布局还原
+    private func failCreate(_ msg: String) -> Bool {
+        Log.info(msg)
+        scheduleRestore(savedOrigins)
+        savedOrigins = [:]
+        return false
     }
 
     private static func configure(_ body: (CGDisplayConfigRef?) -> Void) -> CGError {
