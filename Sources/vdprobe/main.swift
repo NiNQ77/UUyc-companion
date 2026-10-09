@@ -47,6 +47,18 @@ func makeMain(_ target: CGDirectDisplayID) -> CGError {
 
 if args.contains("--list") { dump("当前显示器"); exit(0) }
 
+/// UU 被控时 UURemoteServer 会在各屏铺覆盖窗口，以此判断是否有设备连入（无需权限）
+func uuControlled() -> Bool {
+    let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+    return list.contains { ($0[kCGWindowOwnerName as String] as? String) == "UURemoteServer" }
+}
+let waitUU = args.contains("--wait-uu")
+if waitUU {
+    print("…等待 UU 连入")
+    while !uuControlled() { Thread.sleep(forTimeInterval: 0.5) }
+    print("✅ 检测到 UU 连入")
+}
+
 let desc = CGVirtualDisplayDescriptor()
 desc.name = "UUDisplay Probe"
 desc.maxPixelsWide = UInt32(pixelW)
@@ -85,8 +97,15 @@ if setMain {
     dump("设为主屏后")
 }
 
-print("…停留 \(Int(hold)) 秒")
-RunLoop.main.run(until: Date().addingTimeInterval(hold))
+print("…停留 \(Int(hold)) 秒\(waitUU ? "（UU 断开则提前结束）" : "")")
+let deadline = Date().addingTimeInterval(hold)
+while Date() < deadline {
+    RunLoop.main.run(until: Date().addingTimeInterval(1))
+    if waitUU && !uuControlled() {
+        RunLoop.main.run(until: Date().addingTimeInterval(1.5))  // 防抖：切屏时覆盖窗口会短暂重建
+        if !uuControlled() { print("✅ 检测到 UU 断开"); break }
+    }
+}
 
 if setMain {
     var cfg: CGDisplayConfigRef?

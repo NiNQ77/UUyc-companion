@@ -13,6 +13,23 @@ macOS 菜单栏工具：本机被 UU远程 控制时，按控制端设备自动�
 | UU远程 | /Applications/UURemote.app，进程：UURemote / UURemoteServer / UURemoteService / UURemoteDaemon / UURemoteHelper.xpc | P0 探测对象 |
 | GitHub | gh 已登录 | 可建私有仓库 |
 
+## P0 结论（2026-10-10 实测）
+| 验证项 | 结果 |
+| --- | --- |
+| macOS 27 创建 HiDPI 虚拟屏 | ✅ 2360×1640px / 1180×820pt，单一模式 |
+| 虚拟屏设为主屏后 UU 画面跟随 | ✅ iPad Air 11" M4 铺满无黑边（UU 显示列表出现「UUDisplay Probe」，分辨率 1180×820 HiDPI） |
+| 读取 UU 设备列表 | ✅ AX 可读分组「电脑」「手机/平板」、设备名、「本机」标记、iOS/安卓图标 |
+| 连入信号 | ✅ UURemoteServer 在各屏铺覆盖窗口，CGWindowList 可见，约 2 秒，无需权限 |
+| 控制端设备名 | ✅ 主窗口 AX 表格行；通常与连入同秒出现，UU 网络异常时曾延迟 24 秒 |
+| 断开信号 | ✅ 覆盖窗口消失，1 秒内；需 1.5 秒防抖（切屏时覆盖窗口会短暂重建） |
+| 进程退出/被杀 | ✅ 虚拟屏立即消失，主屏自动回原屏 |
+
+注意：
+- UU 的被控端日志（.slog/.xlog）加密，不可用
+- 设备名延迟时的兜底：先按「上次连入设备」建屏，名称出现后不一致再重建
+- 本进程释放虚拟屏后自身的显示器列表有缓存，判断移除以重配置回调或外部状态为准
+- UU 可修改被控屏分辨率，本工具不应依赖它；虚拟屏仍只提供一个模式
+
 ## 技术选型
 - 语言/UI：Swift + AppKit（`NSStatusItem` 菜单栏）+ SwiftUI（首次向导窗口），`LSUIElement` 隐藏 Dock 图标
 - 虚拟屏：复用 FreeDisplay（MIT）的 CGVirtualDisplay ObjC 桥接头文件，放独立 ObjC target
