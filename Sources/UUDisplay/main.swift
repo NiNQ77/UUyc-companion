@@ -5,7 +5,9 @@
 //      UUDisplay --watchdog                    看门狗模式（由 launchd 托管）
 import AppKit
 import Carbon.HIToolbox
+import PermissionFlow
 import ServiceManagement
+import SwiftUI
 
 if CommandLine.arguments.contains("--watchdog") { Watchdog.run() }
 
@@ -24,14 +26,19 @@ if CommandLine.arguments.contains("--dump-devices") {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let coordinator = Coordinator()
     let wizard = WizardWindowController()
+    let permissions = PermissionsWindowController()
     var statusBar: StatusBarController?
     private var heartbeatTimer: Timer?
     private var hotKeyRef: EventHotKeyRef?
+    private var demoController: PermissionFlowController?
     private var terminating = false
 
     func applicationDidFinishLaunching(_ note: Notification) {
         Log.info("启动 UUDisplay，辅助功能权限：\(UUReader.isTrusted)")
-        statusBar = StatusBarController(coordinator: coordinator) { [weak self] in self?.openWizard() }
+        statusBar = StatusBarController(coordinator: coordinator,
+                                        openWizard: { [weak self] in self?.openWizard() },
+                                        openPermissions: { [weak self] in self?.permissions.show() })
+        wizard.openPermissions = { [weak self] in self?.permissions.show() }
         coordinator.onChange = { [weak self] in self?.statusBar?.refresh() }
 
         // 心跳：看门狗据此判断主程序是否卡死（主线程定时器，卡住即停跳）
@@ -40,6 +47,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installHotkey()
 
         let args = CommandLine.arguments
+        // 调试：把权限窗口渲染为 PNG 后退出
+        if let i = args.firstIndex(of: "--render-permissions"), i + 1 < args.count {
+            let model = PermissionsModel()
+            if ProcessInfo.processInfo.environment["UUDISPLAY_RENDER_PENDING"] == "1" {
+                model.axGranted = false
+                model.watchdogStatus = .requiresApproval
+            }
+            let view = NSHostingView(rootView: PermissionsView(model: model) {})
+            view.frame = NSRect(origin: .zero, size: view.fittingSize)
+            view.layoutSubtreeIfNeeded()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+                    view.cacheDisplay(in: view.bounds, to: rep)
+                    try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: args[i + 1]))
+                }
+                exit(0)
+            }
+            return
+        }
+        // 调试：直接走「授权」按钮背后的 PermissionFlow 调用（打开系统设置 + 拖拽面板）
+        if args.contains("--demo-authorize") {
+            let url = Bundle.main.bundleURL
+            demoController = PermissionFlowController(configuration: .init(
+                requiredAppURLs: [url], promptForAccessibilityTrust: false, localeIdentifier: "zh-Hans"))
+            demoController?.authorize(pane: .accessibility, suggestedAppURLs: [url],
+                                      sourceFrameInScreen: CGRect(x: 800, y: 500, width: 32, height: 32))
+            return
+        }
         if let i = args.firstIndex(of: "--stress"), i + 1 < args.count, let n = Int(args[i + 1]) {
             stress(rounds: n)
             return
@@ -49,10 +84,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        if !UUReader.isTrusted { UUReader.requestTrust() }
         registerWatchdog()
         coordinator.start()
-        if !ConfigStore.shared.isConfigured { openWizard() }
+        // 缺权限先走授权引导，完成（或稍后再说）后再进入设备配置
+        let configure = { [weak self] in
+            if !ConfigStore.shared.isConfigured { self?.openWizard() }
+        }
+        if PermissionsModel.allGranted {
+            configure()
+        } else {
+            permissions.show(autoClose: true, onDone: configure)
+        }
     }
 
     /// 退出前异步收尾（恢复物理屏、移除虚拟屏、还原布局）。
@@ -79,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Log.info("非 .app 运行，跳过看门狗注册（可手动运行 --watchdog）")
             return
         }
-        let agent = SMAppService.agent(plistName: "\(Watchdog.label).plist")
+        let agent = Watchdog.service
         if agent.status != .enabled {
             do { try agent.register() } catch { Log.info("⚠️ 看门狗注册失败：\(error.localizedDescription)") }
         }

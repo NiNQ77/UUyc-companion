@@ -2,6 +2,7 @@
 // 触发条件（存在禁用记录时）：主程序不在 / 心跳超时（卡死，先强杀再恢复）/ UU 已断开 5 秒
 import CoreGraphics
 import Foundation
+import ServiceManagement
 
 enum Heartbeat {
     static let appURL = ConfigStore.dir.appendingPathComponent("heartbeat-app")
@@ -26,6 +27,7 @@ enum Heartbeat {
 
 enum Watchdog {
     static let label = "com.corndog.uudisplay.watchdog"
+    static var service: SMAppService { .agent(plistName: "\(label).plist") }
     static let appMaxAge: TimeInterval = 10
     static let uuGoneLimit: TimeInterval = 5
 

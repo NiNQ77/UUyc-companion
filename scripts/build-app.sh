@@ -15,12 +15,16 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/UUDisplay"
 # 看门狗用独立文件名，避免 killall/pkill UUDisplay 时连同看门狗一起结束
 cp "$BIN" "$APP/Contents/MacOS/UUDisplayWatchdog"
+# PermissionFlow 资源包（本地化文案等），放 Contents/Resources 供 PermissionFlowResources 查找
+cp -R "$(dirname "$BIN")/PermissionFlow_PermissionFlow.bundle" "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>CFBundleIdentifier</key><string>com.corndog.uudisplay</string>
+  <key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
+  <key>CFBundleLocalizations</key><array><string>zh-Hans</string><string>en</string></array>
   <key>CFBundleName</key><string>UUDisplay</string>
   <key>CFBundleDisplayName</key><string>UU远程分辨率伴侣</string>
   <key>CFBundleExecutable</key><string>UUDisplay</string>

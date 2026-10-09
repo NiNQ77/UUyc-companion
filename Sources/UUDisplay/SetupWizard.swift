@@ -16,7 +16,7 @@ final class WizardModel: ObservableObject {
     func load() {
         trusted = UUReader.isTrusted
         guard trusted else {
-            message = "需要「辅助功能」权限才能读取 UU 设备列表。授权后点「重新读取」。"
+            message = "需要先授权才能读取 UU 设备列表。授权后点「重新读取」。"
             rows = store.config.devices
             defaultDevice = store.config.defaultDevice ?? ""
             return
@@ -98,6 +98,7 @@ struct DeviceRow: View {
 
 struct WizardView: View {
     @ObservedObject var model: WizardModel
+    var openPermissions: (() -> Void)?
     var onSave: () -> Void
 
     var body: some View {
@@ -106,11 +107,8 @@ struct WizardView: View {
             if let m = model.message { Text(m).foregroundStyle(.secondary) }
             if !model.trusted {
                 HStack {
-                    Button("打开辅助功能设置") {
-                        UUReader.requestTrust()
-                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
-                    }
-                    Text("在列表中打开「UUDisplay」的开关").foregroundStyle(.secondary)
+                    Button("去授权…") { openPermissions?() }
+                    Text("授权完成后点「重新读取」").foregroundStyle(.secondary)
                 }
             }
             Divider()
@@ -146,6 +144,7 @@ struct WizardView: View {
 
 final class WizardWindowController {
     private var window: NSWindow?
+    var openPermissions: (() -> Void)?
 
     func show(onSave: @escaping () -> Void) {
         if let window {
@@ -154,7 +153,7 @@ final class WizardWindowController {
             return
         }
         let model = WizardModel()
-        let view = WizardView(model: model) { [weak self] in
+        let view = WizardView(model: model, openPermissions: openPermissions) { [weak self] in
             onSave()
             self?.window?.close()
         }
