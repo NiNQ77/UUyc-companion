@@ -25,12 +25,13 @@ func controlledInfo() -> String {
     guard let wins = attr(ax, kAXWindowsAttribute) as? [AXUIElement], !wins.isEmpty else { return "主窗口=无" }
     var texts: [String] = []
     var rows: [String] = []
-    func walk(_ el: AXUIElement, inRow: Bool) {
+    func walk(_ el: AXUIElement, inRow: Bool, depth: Int = 0) {
+        guard depth < 25 else { return }  // AX 树可能有环
         let role = attr(el, kAXRoleAttribute) as? String
         if role == kAXStaticTextRole, let v = attr(el, kAXValueAttribute) as? String {
             if inRow { rows.append(v) } else if v.contains("被控") || v.contains("控制此电脑") { texts.append(v) }
         }
-        for k in (attr(el, kAXChildrenAttribute) as? [AXUIElement]) ?? [] { walk(k, inRow: inRow || role == kAXRowRole) }
+        for k in (attr(el, kAXChildrenAttribute) as? [AXUIElement]) ?? [] { walk(k, inRow: inRow || role == kAXRowRole, depth: depth + 1) }
     }
     wins.forEach { walk($0, inRow: false) }
     let rowText = rows.filter { !$0.hasPrefix("连接时长") }.joined(separator: "|")
