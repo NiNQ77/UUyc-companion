@@ -40,6 +40,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installHotkey()
 
         let args = CommandLine.arguments
+        if let i = args.firstIndex(of: "--stress"), i + 1 < args.count, let n = Int(args[i + 1]) {
+            stress(rounds: n)
+            return
+        }
         if let i = args.firstIndex(of: "--simulate"), i + 1 < args.count {
             simulate(name: args[i + 1], seconds: i + 2 < args.count ? Double(args[i + 2]) ?? 10 : 10)
             return
@@ -51,18 +55,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !ConfigStore.shared.isConfigured { openWizard() }
     }
 
-    /// 退出前异步收尾（恢复物理屏、移除虚拟屏），最多等 4 秒
+    /// 退出前异步收尾（恢复物理屏、移除虚拟屏、还原布局）。
+    /// 注意：.terminateLater 期间主队列的延时任务不会执行，收尾会卡住；
+    /// 所以先取消本次退出，收尾完成后再真正退出（最多等 8 秒，残留由看门狗兜底）。
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard !terminating else { return .terminateNow }
+        if terminating { return .terminateNow }
         terminating = true
-        let finish = {
-            Log.info("退出 UUDisplay")
-            NSApp.reply(toApplicationShouldTerminate: true)
-        }
         var done = false
-        coordinator.shutdown { if !done { done = true; finish() } }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { if !done { done = true; finish() } }
-        return .terminateLater
+        let finish = {
+            guard !done else { return }
+            done = true
+            Log.info("退出 UUDisplay")
+            NSApp.terminate(nil)
+        }
+        coordinator.shutdown(completion: finish)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: finish)
+        return .terminateCancel
     }
 
     /// 看门狗随 App 注册为 LaunchAgent（KeepAlive），仅在 .app 内运行时可用
@@ -96,6 +104,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func openWizard() {
         wizard.show { [weak self] in self?.coordinator.configChanged() }
+    }
+
+    /// 压测：随机连入/换设备/断开，间隔 0.3–6 秒，制造上一轮未收尾就进入下一轮的情况
+    private func stress(rounds: Int) {
+        coordinator.display.shouldDisablePhysical = { [weak self] in self?.coordinator.physicalDisableAllowed ?? false }
+        coordinator.display.recoverIfNeeded()
+        let devices = ["iPad Air", "OPPO Pad 3 Pro", "iPhone 17", "OPPO Reno13 Pro", "M1"]
+        // UUDISPLAY_STRESS_SLOW=1：每段停留 2.5–5 秒，确保走到关闭物理屏
+        let slow = ProcessInfo.processInfo.environment["UUDISPLAY_STRESS_SLOW"] == "1"
+        func hold(_ r: ClosedRange<Double>) -> Double { slow ? Double.random(in: 2.5...5) : Double.random(in: r) }
+        var t = 0.0
+        for r in 1...rounds {
+            let a = devices.randomElement()!
+            DispatchQueue.main.asyncAfter(deadline: .now() + t) { [weak self] in
+                Log.info("—— 压测第 \(r)/\(rounds) 轮：连入 \(a)")
+                self?.coordinator.simulatedName = a
+                self?.coordinator.handleConnect()
+            }
+            t += hold(0.3...4)
+            if Bool.random() {
+                let b = devices.randomElement()!
+                DispatchQueue.main.asyncAfter(deadline: .now() + t) { [weak self] in
+                    Log.info("—— 换设备为 \(b)")
+                    self?.coordinator.simulatedName = b
+                    self?.coordinator.handleConnect()
+                }
+                t += hold(0.3...3)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + t) { [weak self] in
+                Log.info("—— 断开")
+                self?.coordinator.handleDisconnect()
+                self?.coordinator.simulatedName = nil
+            }
+            t += hold(0.3...6)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + t + 1) {
+            Log.info("—— 压测结束，退出")
+            NSApp.terminate(nil)
+        }
     }
 
     private func simulate(name: String, seconds: Double) {

@@ -35,6 +35,7 @@ final class Coordinator {
     }
 
     var statusText: String {
+        if display.wedged { return "⛔️ 显示配置无响应，请注销或重启 Mac" }
         if store.config.paused { return "已暂停自动切换" }
         guard connected else { return "等待 UU 连入" }
         let who = controllerName ?? "未知设备"
