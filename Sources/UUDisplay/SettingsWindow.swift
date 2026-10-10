@@ -340,15 +340,15 @@ struct FallbackPanel: View {
             }
 
             Card(icon: "shield.lefthalf.filled", title: "看门狗", tag: "可选") {
-                Text("一个独立的后台小程序，每秒检查一次。出现以下任一情况时，自动恢复物理屏：")
+                Text("一个独立的后台小程序，每 5 秒检查一次。出现以下任一情况时，自动恢复物理屏：")
                     .fixedSize(horizontal: false, vertical: true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("• UU远程伴侣 崩溃或被强制退出")
                     Text("• UU远程伴侣 卡住超过 10 秒（会先结束它）")
-                    Text("• UU 远程已断开 5 秒，屏幕却还关着")
+                    Text("• UU 远程已断开 5 秒以上，屏幕却还关着")
                 }
                 .font(.callout)
-                Text("看门狗被结束后，系统会在 1 秒内把它重新拉起。")
+                Text("看门狗被结束后，系统会在 5 秒内把它重新拉起。")
                     .font(.callout).foregroundStyle(.secondary)
 
                 Divider()

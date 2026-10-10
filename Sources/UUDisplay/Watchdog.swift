@@ -28,10 +28,13 @@ enum Heartbeat {
 enum Watchdog {
     /// 旧版用 SMAppService 注册的标识，迁移时注销
     static let legacyLabel = "com.corndog.uudisplay.watchdog"
+    /// 检查间隔（实测 1 秒间隔时 CPU 约 0.2%，改为 5 秒进一步降低开销，代价是恢复最多慢几秒）
+    static let interval: TimeInterval = 5
     static let appMaxAge: TimeInterval = 10
     static let uuGoneLimit: TimeInterval = 5
 
-    static var isRunning: Bool { Heartbeat.alive(Heartbeat.watchdogURL, maxAge: 5) }
+    /// 心跳超时须大于检查间隔，留出一个间隔的余量
+    static var isRunning: Bool { Heartbeat.alive(Heartbeat.watchdogURL, maxAge: interval * 2 + 2) }
 
     private static let assumeUU = ProcessInfo.processInfo.environment["UUDISPLAY_WATCHDOG_ASSUME_UU"] == "1"
 
@@ -61,7 +64,7 @@ enum Watchdog {
                     PhysicalDisplays.restore(reason: "看门狗：UU 已断开但物理屏未恢复")
                 }
             }
-            Thread.sleep(forTimeInterval: 1)
+            Thread.sleep(forTimeInterval: interval)
         }
     }
 }
@@ -96,6 +99,8 @@ enum WatchdogAgent {
             "Label": label,
             "ProgramArguments": [executable.path, "--watchdog"],
             "KeepAlive": true,
+            // 被结束后最快 5 秒重新拉起（launchd 默认 10 秒），也避免反复崩溃时频繁重启
+            "ThrottleInterval": 5,
             "RunAtLoad": true,
             "ProcessType": "Interactive",
             "LimitLoadToSessionType": "Aqua",
