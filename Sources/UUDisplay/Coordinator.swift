@@ -29,9 +29,9 @@ final class Coordinator {
         monitor.start()
     }
 
-    /// 开关打开、私有 API 可用、且看门狗健在（兜底就位）时才允许关闭物理屏
+    /// 开关打开且私有 API 可用时关闭物理屏；看门狗是可选兜底（快捷键 ⌃⌥⌘R 始终可用）
     var physicalDisableAllowed: Bool {
-        store.config.shouldDisablePhysical && PhysicalDisplays.available && Watchdog.isRunning
+        store.config.shouldDisablePhysical && PhysicalDisplays.available
     }
 
     var statusText: String {

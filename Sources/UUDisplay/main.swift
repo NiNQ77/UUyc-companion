@@ -1,6 +1,7 @@
 // UU远程分辨率伴侣：本机被 UU远程 控制时，按控制端设备自动建虚拟屏并设为主屏，断开后还原
 // 调试：UUDisplay --simulate "<设备名>" [秒数=10]  模拟一次连入/断开（不依赖 UU）
 //      UUDisplay --simulate "A>B" 8            先按 A 建屏，3 秒后识别为 B 重建
+//      UUDisplay --render-settings <目录>       渲染设置窗口各面板为 PNG
 //      UUDisplay --dump-devices                打印从 UU 读到的设备及预填配置
 //      UUDisplay --watchdog                    看门狗模式（由 launchd 托管）
 //      UUDisplay --render-tour <目录>           渲染功能导览配图（Assets/Tour）
@@ -28,7 +29,7 @@ if CommandLine.arguments.contains("--dump-devices") {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let coordinator = Coordinator()
-    let wizard = WizardWindowController()
+    let settings = SettingsWindowController()
     let permissions = PermissionsWindowController()
     let tour = TourController()
     var statusBar: StatusBarController?
@@ -40,10 +41,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ note: Notification) {
         Log.info("启动 UUDisplay，辅助功能权限：\(UUReader.isTrusted)")
         statusBar = StatusBarController(coordinator: coordinator,
-                                        openWizard: { [weak self] in self?.openWizard() },
+                                        openSettings: { [weak self] in self?.settings.show(pane: $0) },
                                         openPermissions: { [weak self] in self?.permissions.show() },
                                         openTour: { [weak self] in self?.tour.show() })
-        wizard.openPermissions = { [weak self] in self?.permissions.show() }
+        settings.openPermissions = { [weak self] in self?.permissions.show() }
+        settings.onConfigChanged = { [weak self] in self?.coordinator.configChanged() }
+        settings.setDisablePhysical = { [weak self] in self?.coordinator.setDisablePhysical($0) }
         coordinator.onChange = { [weak self] in self?.statusBar?.refresh() }
 
         // 心跳：看门狗据此判断主程序是否卡死（主线程定时器，卡住即停跳）
@@ -52,6 +55,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installHotkey()
 
         let args = CommandLine.arguments
+        // 调试：渲染设置窗口各面板后退出：--render-settings <目录>
+        if let i = args.firstIndex(of: "--render-settings"), i + 1 < args.count {
+            SettingsWindowController.render(to: URL(fileURLWithPath: args[i + 1]))
+            exit(0)
+        }
         // 调试：渲染 TourKit 导览界面（逐页）后退出：--render-tour-ui <配图目录> <输出目录>
         if let i = args.firstIndex(of: "--render-tour-ui"), i + 2 < args.count {
             Tour.renderUI(imagesDir: URL(fileURLWithPath: args[i + 1]), to: URL(fileURLWithPath: args[i + 2]))
@@ -67,7 +75,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let model = PermissionsModel()
             if ProcessInfo.processInfo.environment["UUDISPLAY_RENDER_PENDING"] == "1" {
                 model.axGranted = false
-                model.watchdogRunning = false
             }
             let view = NSHostingView(rootView: PermissionsView(model: model) {})
             view.frame = NSRect(origin: .zero, size: view.fittingSize)
@@ -108,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.start()
         // 首次启动先看功能导览；缺权限再走授权引导，完成（或稍后再说）后进入设备配置
         let configure = { [weak self] in
-            if !ConfigStore.shared.isConfigured { self?.openWizard() }
+            if !ConfigStore.shared.isConfigured { self?.settings.show(pane: .devices) }
         }
         let setup = { [weak self] in
             guard let self else { return }
@@ -143,13 +150,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return .terminateCancel
     }
 
-    /// 看门狗以 LaunchAgent 形式安装（KeepAlive），仅在 .app 内运行时可用
+    /// 看门狗以 LaunchAgent 形式安装（KeepAlive）：仅当用户在设置里开启时安装，否则确保已卸载
     private func registerWatchdog() {
         guard Bundle.main.bundlePath.hasSuffix(".app") else {
             Log.info("非 .app 运行，跳过看门狗安装（可手动运行 --watchdog）")
             return
         }
-        WatchdogAgent.ensureInstalled()
+        if ConfigStore.shared.config.shouldRunWatchdog {
+            WatchdogAgent.ensureInstalled()
+        } else {
+            WatchdogAgent.uninstall()
+        }
     }
 
     /// 全局快捷键 ⌃⌥⌘R：立即恢复物理屏（Carbon 热键，无需任何权限）
@@ -166,10 +177,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let err = RegisterEventHotKey(UInt32(kVK_ANSI_R), UInt32(cmdKey | optionKey | controlKey), id,
                                       GetApplicationEventTarget(), 0, &hotKeyRef)
         Log.info(err == noErr ? "已注册快捷键 ⌃⌥⌘R" : "⚠️ 快捷键 ⌃⌥⌘R 注册失败 \(err)")
-    }
-
-    private func openWizard() {
-        wizard.show { [weak self] in self?.coordinator.configChanged() }
     }
 
     /// 压测：随机连入/换设备/断开，间隔 0.3–6 秒，制造上一轮未收尾就进入下一轮的情况

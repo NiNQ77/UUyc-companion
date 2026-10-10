@@ -1,4 +1,4 @@
-// 首次启动 / 重新配置向导：读取 UU 设备列表，确认类型与分辨率
+// 设备配置面板（设置窗口第一栏）：读取 UU 设备列表，确认类型与分辨率
 import AppKit
 import SwiftUI
 
@@ -99,11 +99,14 @@ struct DeviceRow: View {
 struct WizardView: View {
     @ObservedObject var model: WizardModel
     var openPermissions: (() -> Void)?
+    /// 嵌入设置窗口时使用面板标题与自适应宽度
+    var embedded = false
+    var savedHint = false
     var onSave: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("UU远程分辨率伴侣 · 设备配置").font(.title2.bold())
+            Text(embedded ? "设备配置" : "UU远程分辨率伴侣 · 设备配置").font(.title2.bold())
             if let m = model.message { Text(m).foregroundStyle(.secondary) }
             if !model.trusted {
                 HStack {
@@ -133,41 +136,12 @@ struct WizardView: View {
                 }
                 .frame(width: 380)
                 Spacer()
+                if savedHint { Label("已保存", systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
                 Button("重新读取") { model.load() }
                 Button("保存") { model.save(); onSave() }.keyboardShortcut(.defaultAction)
             }
         }
-        .padding(20)
-        .frame(minWidth: 860, minHeight: 460)
-    }
-}
-
-final class WizardWindowController {
-    private var window: NSWindow?
-    var openPermissions: (() -> Void)?
-
-    func show(onSave: @escaping () -> Void) {
-        if let window {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        let model = WizardModel()
-        let view = WizardView(model: model, openPermissions: openPermissions) { [weak self] in
-            onSave()
-            self?.window?.close()
-        }
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 880, height: 500),
-                         styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        w.title = "UU远程分辨率伴侣"
-        w.contentView = NSHostingView(rootView: view)
-        w.isReleasedWhenClosed = false
-        w.center()
-        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: w, queue: .main) { [weak self] _ in
-            self?.window = nil
-        }
-        window = w
-        w.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        .padding(embedded ? 24 : 20)
+        .frame(minWidth: embedded ? nil : 860, minHeight: 460)
     }
 }
