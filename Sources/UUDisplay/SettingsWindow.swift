@@ -526,13 +526,15 @@ final class SettingsWindowController {
         model.openTour = openTour
         model.start()
         self.model = model
-        let hosting = NSHostingView(rootView: SettingsView(model: model))
-        hosting.sizingOptions = [.preferredContentSize]  // 窗口高度跟随展开/收起
-        let w = NSWindow(contentRect: NSRect(origin: .zero, size: hosting.fittingSize),
-                         styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+        // 用 NSHostingController 作为内容控制器：窗口尺寸随 SwiftUI 内容（展开/收起）自动调整。
+        // 注意：直接给 NSHostingView 设 sizingOptions = .preferredContentSize 会让窗口初始尺寸为 0×0（看不见）
+        let hosting = NSHostingController(rootView: SettingsView(model: model))
+        hosting.sizingOptions = [.preferredContentSize]
+        let w = NSWindow(contentViewController: hosting)
+        w.styleMask = [.titled, .closable, .miniaturizable]
         w.title = "UU远程分辨率伴侣 设置"
-        w.contentView = hosting
         w.isReleasedWhenClosed = false
+        w.setContentSize(hosting.view.fittingSize)  // 先定好尺寸再居中，否则按 0×0 居中会偏到右侧
         w.center()
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: w, queue: .main) { [weak self] _ in
             self?.model?.stop()
