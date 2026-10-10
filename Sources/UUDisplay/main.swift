@@ -47,6 +47,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.openPermissions = { [weak self] in self?.permissions.show() }
         settings.onConfigChanged = { [weak self] in self?.coordinator.configChanged() }
         settings.setDisablePhysical = { [weak self] in self?.coordinator.setDisablePhysical($0) }
+        settings.setPaused = { [weak self] in self?.coordinator.setPaused($0) }
+        settings.restorePhysical = { [weak self] in self?.coordinator.restorePhysical() }
+        settings.openTour = { [weak self] in self?.tour.show() }
         coordinator.onChange = { [weak self] in self?.statusBar?.refresh() }
 
         // 心跳：看门狗据此判断主程序是否卡死（主线程定时器，卡住即停跳）
@@ -115,7 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.start()
         // 首次启动先看功能导览；缺权限再走授权引导，完成（或稍后再说）后进入设备配置
         let configure = { [weak self] in
-            if !ConfigStore.shared.isConfigured { self?.settings.show(pane: .devices) }
+            if !ConfigStore.shared.isConfigured { self?.settings.show(pane: .controller) }
         }
         let setup = { [weak self] in
             guard let self else { return }
