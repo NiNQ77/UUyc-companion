@@ -1,19 +1,19 @@
-// 菜单栏：状态 / 重新配置 / 默认设备 / 暂停 / 开机自启 / 退出
+// 菜单栏：状态 / 设置 / 默认设备 / 暂停 / 开机自启 / 退出
 import AppKit
 import ServiceManagement
 
 final class StatusBarController: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let coordinator: Coordinator
-    private let openWizard: () -> Void
+    private let openSettings: (SettingsPane) -> Void
     private let openPermissions: () -> Void
     private let openTour: () -> Void
     private let store = ConfigStore.shared
 
-    init(coordinator: Coordinator, openWizard: @escaping () -> Void, openPermissions: @escaping () -> Void,
+    init(coordinator: Coordinator, openSettings: @escaping (SettingsPane) -> Void, openPermissions: @escaping () -> Void,
          openTour: @escaping () -> Void) {
         self.coordinator = coordinator
-        self.openWizard = openWizard
+        self.openSettings = openSettings
         self.openPermissions = openPermissions
         self.openTour = openTour
         super.init()
@@ -40,8 +40,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             warn.target = self
             menu.addItem(warn)
         }
-        if store.config.shouldDisablePhysical && !Watchdog.isRunning {
-            let warn = NSMenuItem(title: "⚠️ 看门狗未运行，远程时不会关闭物理屏", action: #selector(showPermissions), keyEquivalent: "")
+        if store.config.shouldDisablePhysical && store.config.shouldRunWatchdog && !Watchdog.isRunning {
+            let warn = NSMenuItem(title: "⚠️ 看门狗已开启但未运行", action: #selector(showDisplaySettings), keyEquivalent: "")
             warn.target = self
             menu.addItem(warn)
         }
@@ -55,7 +55,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(physical)
         menu.addItem(.separator())
 
-        menu.addItem(action("重新配置…", #selector(reconfigure), key: ","))
+        menu.addItem(action("设置…", #selector(reconfigure), key: ","))
         menu.addItem(action("权限设置…", #selector(showPermissions)))
         menu.addItem(action("功能导览…", #selector(showTour)))
 
@@ -92,7 +92,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         return it
     }
 
-    @objc private func reconfigure() { openWizard() }
+    @objc private func reconfigure() { openSettings(.devices) }
+
+    @objc private func showDisplaySettings() { openSettings(.displays) }
 
     @objc private func restorePhysical() { coordinator.restorePhysical() }
 

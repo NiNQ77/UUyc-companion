@@ -7,20 +7,13 @@ import SystemSettingsKit
 
 final class PermissionsModel: ObservableObject {
     @Published var axGranted = UUReader.isTrusted
-    @Published var watchdogRunning = Watchdog.isRunning
     /// 由未全部授权变为全部授权时回调
     var onAllGranted: (() -> Void)?
     private var timer: Timer?
 
-    /// 非 .app 运行（开发调试）时看门狗无法注册，不作要求
-    static var isBundled: Bool { Bundle.main.bundlePath.hasSuffix(".app") }
-
-    var watchdogOK: Bool { !PermissionsModel.isBundled || watchdogRunning }
-    var allGranted: Bool { axGranted && watchdogOK }
-
-    static var allGranted: Bool {
-        UUReader.isTrusted && (!isBundled || Watchdog.isRunning)
-    }
+    // 看门狗改为在设置窗口「屏幕与兜底」中按需开启，这里只管辅助功能
+    var allGranted: Bool { axGranted }
+    static var allGranted: Bool { UUReader.isTrusted }
 
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.refresh() }
@@ -32,18 +25,7 @@ final class PermissionsModel: ObservableObject {
         let before = allGranted
         defer { if !before && allGranted { onAllGranted?() } }
         let ax = UUReader.isTrusted
-        let wd = Watchdog.isRunning
         if ax != axGranted { axGranted = ax; Log.info("辅助功能权限：\(ax ? "已授权" : "未授权")") }
-        if wd != watchdogRunning { watchdogRunning = wd; Log.info("看门狗：\(wd ? "运行中" : "未运行")") }
-    }
-
-    /// 先尝试加载；3 秒后仍未运行，多半是后台项目被关闭，打开「登录项与扩展」
-    @MainActor func enableWatchdog() {
-        WatchdogAgent.ensureInstalled()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-            self?.refresh()
-            if self?.watchdogRunning == false { SystemSettings.open(.loginItems) }
-        }
     }
 }
 
@@ -132,22 +114,6 @@ struct PermissionsView: View {
                     Label("授权", systemImage: "arrow.right.circle")
                 }
                 .buttonStyle(.borderedProminent)
-            }
-
-            if PermissionsModel.isBundled {
-                PermissionCard(
-                    icon: "shield.lefthalf.filled",
-                    title: Text("后台看门狗"),
-                    tag: "推荐",
-                    detail: "远程时关闭物理屏的兜底保护：主程序异常时自动恢复屏幕。需要允许 UUDisplay 在后台运行。",
-                    ok: model.watchdogOK,
-                    okText: "已开启",
-                    pendingText: "未运行",
-                    tip: "未运行时，远程期间不会关闭物理屏，其余功能不受影响。如果点「启用」后仍未运行，请在「登录项与扩展」里打开 UUDisplay 的后台开关。"
-                ) {
-                    Button("启用") { model.enableWatchdog() }
-                        .buttonStyle(.borderedProminent)
-                }
             }
 
             HStack {

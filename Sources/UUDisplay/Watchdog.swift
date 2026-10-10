@@ -31,7 +31,6 @@ enum Watchdog {
     static let appMaxAge: TimeInterval = 10
     static let uuGoneLimit: TimeInterval = 5
 
-    /// 主程序只在看门狗健在时才禁用物理屏
     static var isRunning: Bool { Heartbeat.alive(Heartbeat.watchdogURL, maxAge: 5) }
 
     private static let assumeUU = ProcessInfo.processInfo.environment["UUDISPLAY_WATCHDOG_ASSUME_UU"] == "1"
@@ -122,6 +121,17 @@ enum WatchdogAgent {
             let rc = launchctl(["bootstrap", domain, plistURL.path])
             Log.info(rc == 0 ? "✅ 看门狗已加载" : "⚠️ 看门狗加载失败（launchctl 返回 \(rc)），可能被「登录项与扩展」中的后台开关关闭")
         }
+    }
+
+    /// 卸载：停止并移除 LaunchAgent（用户在设置里关闭看门狗，或从未开启）
+    static func uninstall() {
+        migrateFromSMAppService()
+        let loaded = isLoaded
+        if loaded { launchctl(["bootout", "\(domain)/\(label)"]) }
+        let existed = FileManager.default.fileExists(atPath: plistURL.path)
+        try? FileManager.default.removeItem(at: plistURL)
+        if loaded || existed { Log.info("已卸载看门狗") }
+        try? FileManager.default.removeItem(at: Heartbeat.watchdogURL)
     }
 
     /// 清理旧版 SMAppService 注册的看门狗（launchd 中仍在反复 spawn 失败）
