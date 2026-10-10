@@ -5,12 +5,12 @@ import ServiceManagement
 final class StatusBarController: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let coordinator: Coordinator
-    private let openSettings: (SettingsPane) -> Void
+    private let openSettings: (SettingsPane?) -> Void
     private let openPermissions: () -> Void
     private let openTour: () -> Void
     private let store = ConfigStore.shared
 
-    init(coordinator: Coordinator, openSettings: @escaping (SettingsPane) -> Void, openPermissions: @escaping () -> Void,
+    init(coordinator: Coordinator, openSettings: @escaping (SettingsPane?) -> Void, openPermissions: @escaping () -> Void,
          openTour: @escaping () -> Void) {
         self.coordinator = coordinator
         self.openSettings = openSettings
@@ -92,9 +92,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         return it
     }
 
-    @objc private func reconfigure() { openSettings(.devices) }
+    @objc private func reconfigure() { openSettings(nil) }
 
-    @objc private func showDisplaySettings() { openSettings(.displays) }
+    @objc private func showDisplaySettings() { openSettings(.fallback) }
 
     @objc private func restorePhysical() { coordinator.restorePhysical() }
 

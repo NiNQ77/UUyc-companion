@@ -123,6 +123,14 @@ enum WatchdogAgent {
         }
     }
 
+    /// 停止本次登录中的看门狗，保留 LaunchAgent 配置（下次打开 App 或重新登录时恢复）
+    static func stopForSession() {
+        guard isLoaded else { return }
+        launchctl(["bootout", "\(domain)/\(label)"])
+        try? FileManager.default.removeItem(at: Heartbeat.watchdogURL)
+        Log.info("已停止本次登录中的看门狗")
+    }
+
     /// 卸载：停止并移除 LaunchAgent（用户在设置里关闭看门狗，或从未开启）
     static func uninstall() {
         migrateFromSMAppService()
