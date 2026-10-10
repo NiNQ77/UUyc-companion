@@ -26,8 +26,8 @@ enum Heartbeat {
 }
 
 enum Watchdog {
-    static let label = "com.corndog.uudisplay.watchdog"
-    static var service: SMAppService { .agent(plistName: "\(label).plist") }
+    /// 旧版用 SMAppService 注册的标识，迁移时注销
+    static let legacyLabel = "com.corndog.uudisplay.watchdog"
     static let appMaxAge: TimeInterval = 10
     static let uuGoneLimit: TimeInterval = 5
 
@@ -64,5 +64,72 @@ enum Watchdog {
             }
             Thread.sleep(forTimeInterval: 1)
         }
+    }
+}
+
+/// 看门狗的 LaunchAgent 安装（~/Library/LaunchAgents + launchctl）。
+/// 不用 SMAppService.agent：自签证书（无 Team ID）签名时，BTM 生成的启动约束为空 cdhash 列表，
+/// launchd 持续 spawn 失败（EX_CONFIG / OS_REASON_CODESIGNING）。
+enum WatchdogAgent {
+    static let label = "com.corndog.uudisplay.watchdog-agent"
+    static var plistURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/LaunchAgents/\(label).plist")
+    }
+    static var executable: URL { Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/UUDisplayWatchdog") }
+    private static var domain: String { "gui/\(getuid())" }
+
+    @discardableResult
+    private static func launchctl(_ args: [String]) -> Int32 {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        p.arguments = args
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        do { try p.run() } catch { return -1 }
+        p.waitUntilExit()
+        return p.terminationStatus
+    }
+
+    static var isLoaded: Bool { launchctl(["print", "\(domain)/\(label)"]) == 0 }
+
+    private static var plistData: Data {
+        let dict: [String: Any] = [
+            "Label": label,
+            "ProgramArguments": [executable.path, "--watchdog"],
+            "KeepAlive": true,
+            "RunAtLoad": true,
+            "ProcessType": "Interactive",
+            "LimitLoadToSessionType": "Aqua",
+        ]
+        return (try? PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)) ?? Data()
+    }
+
+    /// 写入（路径变化时更新）并加载；已加载且配置未变则不动
+    static func ensureInstalled() {
+        guard FileManager.default.isExecutableFile(atPath: executable.path) else {
+            Log.info("⚠️ 找不到看门狗可执行文件，跳过安装：\(executable.path)")
+            return
+        }
+        migrateFromSMAppService()
+        let data = plistData
+        let changed = (try? Data(contentsOf: plistURL)) != data
+        if changed {
+            try? FileManager.default.createDirectory(at: plistURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? data.write(to: plistURL, options: .atomic)
+        }
+        if changed && isLoaded { launchctl(["bootout", "\(domain)/\(label)"]) }
+        if !isLoaded {
+            let rc = launchctl(["bootstrap", domain, plistURL.path])
+            Log.info(rc == 0 ? "✅ 看门狗已加载" : "⚠️ 看门狗加载失败（launchctl 返回 \(rc)），可能被「登录项与扩展」中的后台开关关闭")
+        }
+    }
+
+    /// 清理旧版 SMAppService 注册的看门狗（launchd 中仍在反复 spawn 失败）
+    private static func migrateFromSMAppService() {
+        guard launchctl(["print", "\(domain)/\(Watchdog.legacyLabel)"]) == 0 else { return }
+        SMAppService.agent(plistName: "\(Watchdog.legacyLabel).plist").unregister { error in
+            Log.info(error == nil ? "已注销旧版看门狗（SMAppService）" : "⚠️ 注销旧版看门狗：\(error!.localizedDescription)")
+        }
+        launchctl(["bootout", "\(domain)/\(Watchdog.legacyLabel)"])
     }
 }

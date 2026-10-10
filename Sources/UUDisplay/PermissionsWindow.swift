@@ -7,7 +7,7 @@ import SystemSettingsKit
 
 final class PermissionsModel: ObservableObject {
     @Published var axGranted = UUReader.isTrusted
-    @Published var watchdogStatus = Watchdog.service.status
+    @Published var watchdogRunning = Watchdog.isRunning
     /// 由未全部授权变为全部授权时回调
     var onAllGranted: (() -> Void)?
     private var timer: Timer?
@@ -15,11 +15,11 @@ final class PermissionsModel: ObservableObject {
     /// 非 .app 运行（开发调试）时看门狗无法注册，不作要求
     static var isBundled: Bool { Bundle.main.bundlePath.hasSuffix(".app") }
 
-    var watchdogOK: Bool { !PermissionsModel.isBundled || watchdogStatus == .enabled }
+    var watchdogOK: Bool { !PermissionsModel.isBundled || watchdogRunning }
     var allGranted: Bool { axGranted && watchdogOK }
 
     static var allGranted: Bool {
-        UUReader.isTrusted && (!isBundled || Watchdog.service.status == .enabled)
+        UUReader.isTrusted && (!isBundled || Watchdog.isRunning)
     }
 
     func start() {
@@ -32,15 +32,18 @@ final class PermissionsModel: ObservableObject {
         let before = allGranted
         defer { if !before && allGranted { onAllGranted?() } }
         let ax = UUReader.isTrusted
-        let wd = Watchdog.service.status
+        let wd = Watchdog.isRunning
         if ax != axGranted { axGranted = ax; Log.info("辅助功能权限：\(ax ? "已授权" : "未授权")") }
-        if wd != watchdogStatus { watchdogStatus = wd; Log.info("看门狗状态：\(wd.rawValue)") }
+        if wd != watchdogRunning { watchdogRunning = wd; Log.info("看门狗：\(wd ? "运行中" : "未运行")") }
     }
 
+    /// 先尝试加载；3 秒后仍未运行，多半是后台项目被关闭，打开「登录项与扩展」
     @MainActor func enableWatchdog() {
-        do { try Watchdog.service.register() } catch { Log.info("⚠️ 看门狗注册失败：\(error.localizedDescription)") }
-        refresh()
-        if watchdogStatus == .requiresApproval { SystemSettings.open(.loginItems) }
+        WatchdogAgent.ensureInstalled()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            self?.refresh()
+            if self?.watchdogRunning == false { SystemSettings.open(.loginItems) }
+        }
     }
 }
 
@@ -100,14 +103,6 @@ struct PermissionsView: View {
 
     private var appURL: URL { Bundle.main.bundleURL }
 
-    private var watchdogPending: String {
-        switch model.watchdogStatus {
-        case .requiresApproval: return "需在登录项中允许"
-        case .notFound: return "未找到"
-        default: return "未启用"
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
@@ -126,7 +121,7 @@ struct PermissionsView: View {
                 ok: model.axGranted,
                 okText: "已授权",
                 pendingText: "未授权",
-                tip: "点「授权」会打开系统设置，并在旁边出现一个小面板，把面板里的 UUDisplay 拖进列表即可。\n升级后如果列表里已有 UUDisplay 却仍显示未授权：先选中它点「−」删除，再重新拖入。"
+                tip: "点「授权」会打开系统设置，并在旁边出现一个小面板，把面板里的 UUDisplay 拖进列表即可。\n如果列表里已有 UUDisplay 却仍显示未授权（旧版签名留下的记录）：先选中它点「−」删除，再重新拖入。"
             ) {
                 PermissionFlowButton(
                     pane: .accessibility,
@@ -147,10 +142,10 @@ struct PermissionsView: View {
                     detail: "远程时关闭物理屏的兜底保护：主程序异常时自动恢复屏幕。需要允许 UUDisplay 在后台运行。",
                     ok: model.watchdogOK,
                     okText: "已开启",
-                    pendingText: watchdogPending,
-                    tip: "未开启时，远程期间不会关闭物理屏，其余功能不受影响。"
+                    pendingText: "未运行",
+                    tip: "未运行时，远程期间不会关闭物理屏，其余功能不受影响。如果点「启用」后仍未运行，请在「登录项与扩展」里打开 UUDisplay 的后台开关。"
                 ) {
-                    Button(model.watchdogStatus == .requiresApproval ? "打开登录项" : "启用") { model.enableWatchdog() }
+                    Button("启用") { model.enableWatchdog() }
                         .buttonStyle(.borderedProminent)
                 }
             }

@@ -67,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let model = PermissionsModel()
             if ProcessInfo.processInfo.environment["UUDISPLAY_RENDER_PENDING"] == "1" {
                 model.axGranted = false
-                model.watchdogStatus = .requiresApproval
+                model.watchdogRunning = false
             }
             let view = NSHostingView(rootView: PermissionsView(model: model) {})
             view.frame = NSRect(origin: .zero, size: view.fittingSize)
@@ -143,17 +143,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return .terminateCancel
     }
 
-    /// 看门狗随 App 注册为 LaunchAgent（KeepAlive），仅在 .app 内运行时可用
+    /// 看门狗以 LaunchAgent 形式安装（KeepAlive），仅在 .app 内运行时可用
     private func registerWatchdog() {
         guard Bundle.main.bundlePath.hasSuffix(".app") else {
-            Log.info("非 .app 运行，跳过看门狗注册（可手动运行 --watchdog）")
+            Log.info("非 .app 运行，跳过看门狗安装（可手动运行 --watchdog）")
             return
         }
-        let agent = Watchdog.service
-        if agent.status != .enabled {
-            do { try agent.register() } catch { Log.info("⚠️ 看门狗注册失败：\(error.localizedDescription)") }
-        }
-        Log.info("看门狗状态：\(agent.status.rawValue)（1=已启用 2=需在登录项中批准）")
+        WatchdogAgent.ensureInstalled()
     }
 
     /// 全局快捷键 ⌃⌥⌘R：立即恢复物理屏（Carbon 热键，无需任何权限）

@@ -1,11 +1,18 @@
 #!/bin/zsh
-# 构建 UUDisplay.app（ad-hoc 签名）。用法：scripts/build-app.sh [--install]
+# 构建 UUDisplay.app（「UUDisplay Signing」证书签名）。用法：scripts/build-app.sh [--install]
+# 固定证书签名后，签名要求不随每次构建变化，升级后「辅助功能」等授权可保留（ad-hoc 签名每次都会失效）
 # --install：复制到 /Applications 并启动
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION="0.1.0"
 APP="build/UUDisplay.app"
+SIGN_IDENTITY="${SIGN_IDENTITY:-UUDisplay Signing}"
+
+if ! security find-identity -v -p codesigning | grep -q "\"$SIGN_IDENTITY\""; then
+  echo "❌ 钥匙串中找不到有效的代码签名证书「$SIGN_IDENTITY」" >&2
+  exit 1
+fi
 
 swift build -c release --build-system native --product UUDisplay
 BIN="$(swift build -c release --build-system native --show-bin-path)/UUDisplay"
@@ -39,24 +46,11 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </dict>
 </plist>
 PLIST
-# 看门狗 LaunchAgent（SMAppService.agent 注册，KeepAlive 保证被杀后自动拉起）
-mkdir -p "$APP/Contents/Library/LaunchAgents"
-cat > "$APP/Contents/Library/LaunchAgents/com.corndog.uudisplay.watchdog.plist" <<PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>com.corndog.uudisplay.watchdog</string>
-  <key>BundleProgram</key><string>Contents/MacOS/UUDisplayWatchdog</string>
-  <key>ProgramArguments</key><array><string>UUDisplayWatchdog</string><string>--watchdog</string></array>
-  <key>KeepAlive</key><true/>
-  <key>RunAtLoad</key><true/>
-  <key>ProcessType</key><string>Interactive</string>
-  <key>LimitLoadToSessionType</key><string>Aqua</string>
-</dict>
-</plist>
-PLIST
-codesign --force --sign - --identifier com.corndog.uudisplay "$APP"
+# 看门狗 LaunchAgent 由 App 运行时写入 ~/Library/LaunchAgents 并用 launchctl 加载（见 WatchdogAgent）
+# 先签内嵌的看门狗可执行文件，再签整个 App
+codesign --force --sign "$SIGN_IDENTITY" --identifier com.corndog.uudisplay.watchdog "$APP/Contents/MacOS/UUDisplayWatchdog"
+codesign --force --sign "$SIGN_IDENTITY" --identifier com.corndog.uudisplay "$APP"
+codesign --verify --strict --deep "$APP"
 echo "✅ 已生成 $APP"
 
 if [[ "${1:-}" == "--install" ]]; then
