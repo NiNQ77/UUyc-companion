@@ -17,6 +17,8 @@ cp "$BIN" "$APP/Contents/MacOS/UUDisplay"
 cp "$BIN" "$APP/Contents/MacOS/UUDisplayWatchdog"
 # PermissionFlow 资源包（本地化文案等），放 Contents/Resources 供 PermissionFlowResources 查找
 cp -R "$(dirname "$BIN")/PermissionFlow_PermissionFlow.bundle" "$APP/Contents/Resources/"
+# 功能导览配图（TourKit 从 Bundle.main 的 Resources 根目录按文件名查找）
+cp Assets/Tour/*.png "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

@@ -7,12 +7,15 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private let coordinator: Coordinator
     private let openWizard: () -> Void
     private let openPermissions: () -> Void
+    private let openTour: () -> Void
     private let store = ConfigStore.shared
 
-    init(coordinator: Coordinator, openWizard: @escaping () -> Void, openPermissions: @escaping () -> Void) {
+    init(coordinator: Coordinator, openWizard: @escaping () -> Void, openPermissions: @escaping () -> Void,
+         openTour: @escaping () -> Void) {
         self.coordinator = coordinator
         self.openWizard = openWizard
         self.openPermissions = openPermissions
+        self.openTour = openTour
         super.init()
         let menu = NSMenu()
         menu.delegate = self
@@ -54,6 +57,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
         menu.addItem(action("重新配置…", #selector(reconfigure), key: ","))
         menu.addItem(action("权限设置…", #selector(showPermissions)))
+        menu.addItem(action("功能导览…", #selector(showTour)))
 
         let defaults = NSMenuItem(title: "默认设备", action: nil, keyEquivalent: "")
         let sub = NSMenu()
@@ -95,6 +99,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     @objc private func toggleDisablePhysical() { coordinator.setDisablePhysical(!store.config.shouldDisablePhysical) }
 
     @objc private func showPermissions() { openPermissions() }
+
+    @objc private func showTour() { openTour() }
 
 
     @objc private func pickDefault(_ sender: NSMenuItem) {

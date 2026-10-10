@@ -3,6 +3,8 @@
 //      UUDisplay --simulate "A>B" 8            先按 A 建屏，3 秒后识别为 B 重建
 //      UUDisplay --dump-devices                打印从 UU 读到的设备及预填配置
 //      UUDisplay --watchdog                    看门狗模式（由 launchd 托管）
+//      UUDisplay --render-tour <目录>           渲染功能导览配图（Assets/Tour）
+//      UUDisplay --tour                        只展示功能导览
 import AppKit
 import Carbon.HIToolbox
 import PermissionFlow
@@ -23,10 +25,12 @@ if CommandLine.arguments.contains("--dump-devices") {
     exit(0)
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let coordinator = Coordinator()
     let wizard = WizardWindowController()
     let permissions = PermissionsWindowController()
+    let tour = TourController()
     var statusBar: StatusBarController?
     private var heartbeatTimer: Timer?
     private var hotKeyRef: EventHotKeyRef?
@@ -37,7 +41,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Log.info("启动 UUDisplay，辅助功能权限：\(UUReader.isTrusted)")
         statusBar = StatusBarController(coordinator: coordinator,
                                         openWizard: { [weak self] in self?.openWizard() },
-                                        openPermissions: { [weak self] in self?.permissions.show() })
+                                        openPermissions: { [weak self] in self?.permissions.show() },
+                                        openTour: { [weak self] in self?.tour.show() })
         wizard.openPermissions = { [weak self] in self?.permissions.show() }
         coordinator.onChange = { [weak self] in self?.statusBar?.refresh() }
 
@@ -47,6 +52,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installHotkey()
 
         let args = CommandLine.arguments
+        // 调试：渲染 TourKit 导览界面（逐页）后退出：--render-tour-ui <配图目录> <输出目录>
+        if let i = args.firstIndex(of: "--render-tour-ui"), i + 2 < args.count {
+            Tour.renderUI(imagesDir: URL(fileURLWithPath: args[i + 1]), to: URL(fileURLWithPath: args[i + 2]))
+            exit(0)
+        }
+        // 调试：渲染功能导览配图后退出
+        if let i = args.firstIndex(of: "--render-tour"), i + 1 < args.count {
+            Tour.render(to: URL(fileURLWithPath: args[i + 1]))
+            exit(0)
+        }
         // 调试：把权限窗口渲染为 PNG 后退出
         if let i = args.firstIndex(of: "--render-permissions"), i + 1 < args.count {
             let model = PermissionsModel()
@@ -84,16 +99,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if args.contains("--tour") {
+            tour.show { NSApp.terminate(nil) }
+            return
+        }
+
         registerWatchdog()
         coordinator.start()
-        // 缺权限先走授权引导，完成（或稍后再说）后再进入设备配置
+        // 首次启动先看功能导览；缺权限再走授权引导，完成（或稍后再说）后进入设备配置
         let configure = { [weak self] in
             if !ConfigStore.shared.isConfigured { self?.openWizard() }
         }
-        if PermissionsModel.allGranted {
-            configure()
+        let setup = { [weak self] in
+            guard let self else { return }
+            if PermissionsModel.allGranted {
+                configure()
+            } else {
+                self.permissions.show(autoClose: true, onDone: configure)
+            }
+        }
+        if ConfigStore.shared.config.tourShown == true {
+            setup()
         } else {
-            permissions.show(autoClose: true, onDone: configure)
+            tour.show(onDone: setup)
         }
     }
 
@@ -211,7 +239,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 let app = NSApplication.shared
-let delegate = AppDelegate()
+let delegate = MainActor.assumeIsolated { AppDelegate() }  // 顶层代码运行在主线程
 app.delegate = delegate
 app.setActivationPolicy(.accessory)
 app.run()

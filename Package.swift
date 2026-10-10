@@ -7,6 +7,8 @@ let package = Package(
     dependencies: [
         // 权限引导：打开系统设置隐私页 + 拖拽授权悬浮面板（MIT，内置副本见 Vendor/PermissionFlow/VENDORED.md）
         .package(path: "Vendor/PermissionFlow"),
+        // 首次启动功能导览（MIT，内置副本见 Vendor/TourKit/VENDORED.md）
+        .package(path: "Vendor/TourKit"),
     ],
     targets: [
         .target(name: "CGVirtualDisplayBridge"),
@@ -17,6 +19,7 @@ let package = Package(
             "CGVirtualDisplayBridge",
             .product(name: "PermissionFlow", package: "PermissionFlow"),
             .product(name: "SystemSettingsKit", package: "PermissionFlow"),
+            .product(name: "TourKit", package: "TourKit"),
         ]),
         .executableTarget(name: "dispoff", dependencies: ["CGVirtualDisplayBridge"]),
     ]
