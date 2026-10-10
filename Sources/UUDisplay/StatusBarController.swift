@@ -6,11 +6,16 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let coordinator: Coordinator
     private let openWizard: () -> Void
+    private let openPermissions: () -> Void
+    private let openTour: () -> Void
     private let store = ConfigStore.shared
 
-    init(coordinator: Coordinator, openWizard: @escaping () -> Void) {
+    init(coordinator: Coordinator, openWizard: @escaping () -> Void, openPermissions: @escaping () -> Void,
+         openTour: @escaping () -> Void) {
         self.coordinator = coordinator
         self.openWizard = openWizard
+        self.openPermissions = openPermissions
+        self.openTour = openTour
         super.init()
         let menu = NSMenu()
         menu.delegate = self
@@ -31,13 +36,28 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         status.isEnabled = false
         menu.addItem(status)
         if !UUReader.isTrusted {
-            let warn = NSMenuItem(title: "⚠️ 未授权辅助功能，无法识别设备名", action: #selector(openAX), keyEquivalent: "")
+            let warn = NSMenuItem(title: "⚠️ 未授权辅助功能，无法识别设备名", action: #selector(showPermissions), keyEquivalent: "")
+            warn.target = self
+            menu.addItem(warn)
+        }
+        if store.config.shouldDisablePhysical && !Watchdog.isRunning {
+            let warn = NSMenuItem(title: "⚠️ 看门狗未运行，远程时不会关闭物理屏", action: #selector(showPermissions), keyEquivalent: "")
             warn.target = self
             menu.addItem(warn)
         }
         menu.addItem(.separator())
 
+        let restore = action("立即恢复所有屏幕（⌃⌥⌘R）", #selector(restorePhysical))
+        restore.isEnabled = coordinator.display.physicalOff || PhysicalDisplays.pending != nil
+        menu.addItem(restore)
+        let physical = action("远程时关闭物理屏", #selector(toggleDisablePhysical))
+        physical.state = store.config.shouldDisablePhysical ? .on : .off
+        menu.addItem(physical)
+        menu.addItem(.separator())
+
         menu.addItem(action("重新配置…", #selector(reconfigure), key: ","))
+        menu.addItem(action("权限设置…", #selector(showPermissions)))
+        menu.addItem(action("功能导览…", #selector(showTour)))
 
         let defaults = NSMenuItem(title: "默认设备", action: nil, keyEquivalent: "")
         let sub = NSMenu()
@@ -74,10 +94,14 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     @objc private func reconfigure() { openWizard() }
 
-    @objc private func openAX() {
-        UUReader.requestTrust()
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
-    }
+    @objc private func restorePhysical() { coordinator.restorePhysical() }
+
+    @objc private func toggleDisablePhysical() { coordinator.setDisablePhysical(!store.config.shouldDisablePhysical) }
+
+    @objc private func showPermissions() { openPermissions() }
+
+    @objc private func showTour() { openTour() }
+
 
     @objc private func pickDefault(_ sender: NSMenuItem) {
         let name = sender.representedObject as? String ?? ""

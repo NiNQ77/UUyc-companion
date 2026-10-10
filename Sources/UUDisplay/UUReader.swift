@@ -17,10 +17,6 @@ enum UUReader {
 
     static var isTrusted: Bool { AXIsProcessTrusted() }
 
-    static func requestTrust() {
-        _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary)
-    }
-
     private static func appElement() -> AXUIElement? {
         guard let app else { return nil }
         let ax = AXUIElementCreateApplication(app.processIdentifier)

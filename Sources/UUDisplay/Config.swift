@@ -85,6 +85,11 @@ struct AppConfig: Codable {
     var defaultDevice: String?
     var lastDevice: String?
     var paused = false
+    /// 远程时关闭物理屏（缺省开启；可选类型以兼容旧配置文件）
+    var disablePhysical: Bool?
+    var shouldDisablePhysical: Bool { disablePhysical ?? true }
+    /// 是否已看过首次启动功能导览
+    var tourShown: Bool?
 }
 
 final class ConfigStore {
