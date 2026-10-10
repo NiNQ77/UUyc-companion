@@ -99,6 +99,8 @@ enum WatchdogAgent {
             "RunAtLoad": true,
             "ProcessType": "Interactive",
             "LimitLoadToSessionType": "Aqua",
+            // 让「登录项与扩展」把它显示为本 App（名称、图标），而不是一个陌生的可执行文件
+            "AssociatedBundleIdentifiers": [Bundle.main.bundleIdentifier ?? "com.corndog.uudisplay"],
         ]
         return (try? PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)) ?? Data()
     }

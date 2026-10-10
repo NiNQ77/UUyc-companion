@@ -106,7 +106,7 @@ struct WizardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(embedded ? "设备配置" : "UU远程分辨率伴侣 · 设备配置").font(.title2.bold())
+            Text(embedded ? "设备配置" : "UU远程伴侣 · 设备配置").font(.title2.bold())
             if let m = model.message { Text(m).foregroundStyle(.secondary) }
             if !model.trusted {
                 HStack {

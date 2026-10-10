@@ -77,7 +77,7 @@ final class SettingsModel: ObservableObject {
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch {
-            loginError = "设置失败：\(error.localizedDescription)。请把 UUDisplay.app 放在「应用程序」文件夹后再试。"
+            loginError = "设置失败：\(error.localizedDescription)。请把 UU远程伴侣 放在「应用程序」文件夹后再试。"
             Log.info("⚠️ 开机启动设置失败：\(error.localizedDescription)")
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -113,7 +113,7 @@ final class SettingsModel: ObservableObject {
             attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor])
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "UU远程分辨率伴侣",
+            .applicationName: "UU远程伴侣",
             .applicationVersion: version,
             .credits: credits,
         ])
@@ -127,69 +127,46 @@ final class SettingsModel: ObservableObject {
     }
 }
 
-// MARK: - 键盘示意图（Mac 键盘左半边，高亮 ⌃ ⌥ ⌘ R）
+// MARK: - 快捷键示意图（⌃ ⌥ ⌘ 9 四个键）
 
-private struct KeyCap: View {
-    let label: String
-    var sub: String? = nil
-    var width: CGFloat = 1
-    var height: CGFloat = 1
-    var highlighted = false
-    static let unit: CGFloat = 36
+private struct HotkeyCap: View {
+    let symbol: String
+    var name: String? = nil
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(highlighted ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(highlighted ? 0 : 0.18), lineWidth: 1))
-            .shadow(color: .black.opacity(0.12), radius: 0.5, y: 1)
+        RoundedRectangle(cornerRadius: 10)
+            .fill(Color.accentColor)
+            .shadow(color: .black.opacity(0.18), radius: 1, y: 2)
             .overlay(
-                VStack(spacing: 1) {
-                    Text(label).font(.system(size: sub == nil ? 13 : 14, weight: highlighted ? .bold : .regular))
-                    if let sub { Text(sub).font(.system(size: 8.5)) }
+                VStack(spacing: 2) {
+                    Text(symbol).font(.system(size: name == nil ? 28 : 24, weight: .semibold))
+                    if let name { Text(name).font(.system(size: 11, weight: .medium)) }
                 }
-                .foregroundStyle(highlighted ? Color.white : Color.primary.opacity(0.75))
+                .foregroundStyle(.white)
             )
-            .frame(width: KeyCap.unit * width + 5 * (width - 1), height: KeyCap.unit * height)
+            .frame(width: name == nil ? 64 : 78, height: 64)
     }
 }
 
-struct KeyboardLeftHalfView: View {
-    private func row(_ keys: [(String, CGFloat)]) -> some View {
-        HStack(spacing: 5) { ForEach(Array(keys.enumerated()), id: \.offset) { KeyCap(label: $0.element.0, width: $0.element.1) } }
+struct HotkeyKeysView: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            HotkeyCap(symbol: "⌃", name: "control")
+            plus
+            HotkeyCap(symbol: "⌥", name: "option")
+            plus
+            HotkeyCap(symbol: "⌘", name: "command")
+            plus
+            HotkeyCap(symbol: "9")
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.06)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("快捷键示意图：同时按下 control、option、command 和 9")
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 5) {
-                KeyCap(label: "esc", width: 1.4, height: 0.6)
-                ForEach(1...5, id: \.self) { KeyCap(label: "F\($0)", height: 0.6) }
-            }
-            row([("`", 1), ("1", 1), ("2", 1), ("3", 1), ("4", 1), ("5", 1), ("6", 1)])
-            HStack(spacing: 5) {
-                KeyCap(label: "⇥", sub: "tab", width: 1.5)
-                ForEach(["Q", "W", "E"], id: \.self) { KeyCap(label: $0) }
-                KeyCap(label: "R", highlighted: true)
-                KeyCap(label: "T")
-            }
-            HStack(spacing: 5) {
-                KeyCap(label: "⇪", sub: "caps lock", width: 1.8)
-                ForEach(["A", "S", "D", "F", "G"], id: \.self) { KeyCap(label: $0) }
-            }
-            HStack(spacing: 5) {
-                KeyCap(label: "⇧", sub: "shift", width: 2.3)
-                ForEach(["Z", "X", "C", "V", "B"], id: \.self) { KeyCap(label: $0) }
-            }
-            HStack(spacing: 5) {
-                KeyCap(label: "fn")
-                KeyCap(label: "⌃", sub: "control", highlighted: true)
-                KeyCap(label: "⌥", sub: "option", highlighted: true)
-                KeyCap(label: "⌘", sub: "command", width: 1.3, highlighted: true)
-                KeyCap(label: "", width: 3)
-            }
-        }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.06)))
-        .accessibilityLabel("键盘示意图：同时按下 control、option、command 和 R")
+    private var plus: some View {
+        Image(systemName: "plus").font(.system(size: 16, weight: .bold)).foregroundStyle(.secondary)
     }
 }
 
@@ -319,7 +296,7 @@ struct ControlledPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("设置被控制端").font(.title3.bold())
-            row("开机时启动 UUDisplay",
+            row("开机时启动 UU远程伴侣",
                 "登录 Mac 后自动在菜单栏运行，随时准备接收 UU 远程连入。",
                 isOn: Binding(get: { model.launchAtLogin }, set: { model.toggleLaunchAtLogin($0) }))
             if let err = model.loginError {
@@ -355,9 +332,9 @@ struct FallbackPanel: View {
             }
 
             Card(icon: "keyboard", title: "快捷键", tag: "始终可用") {
-                Text("坐在 Mac 前、屏幕黑着时，同时按下 **⌃ control + ⌥ option + ⌘ command + R**，立即恢复所有物理屏。虚拟屏保留，本次连接内不再关闭物理屏。")
+                Text("坐在 Mac 前、屏幕黑着时，同时按下 **⌃ control + ⌥ option + ⌘ command + 9**，立即恢复所有物理屏。虚拟屏保留，本次连接内不再关闭物理屏。")
                     .fixedSize(horizontal: false, vertical: true)
-                KeyboardLeftHalfView()
+                HotkeyKeysView()
                 Text("设置窗口和菜单栏里的「立即恢复所有屏幕」效果相同。")
                     .font(.callout).foregroundStyle(.secondary)
             }
@@ -366,8 +343,8 @@ struct FallbackPanel: View {
                 Text("一个独立的后台小程序，每秒检查一次。出现以下任一情况时，自动恢复物理屏：")
                     .fixedSize(horizontal: false, vertical: true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("• UUDisplay 崩溃或被强制退出")
-                    Text("• UUDisplay 卡住超过 10 秒（会先结束它）")
+                    Text("• UU远程伴侣 崩溃或被强制退出")
+                    Text("• UU远程伴侣 卡住超过 10 秒（会先结束它）")
                     Text("• UU 远程已断开 5 秒，屏幕却还关着")
                 }
                 .font(.callout)
@@ -376,7 +353,7 @@ struct FallbackPanel: View {
 
                 Divider()
                 Text("需要的权限").font(.subheadline.bold())
-                Text("开启后，看门狗会安装为登录项（后台项目），macOS 会提示「已添加后台项目」。如果它在「系统设置 › 通用 › 登录项与扩展」中被关闭，需要打开 UUDisplay 的开关。它不需要辅助功能等其他权限。只有在这里开启时才会安装并加载到内存，关闭即卸载。")
+                Text("开启后，看门狗会安装为登录项（后台项目），macOS 会提示「已添加后台项目」。如果它在「系统设置 › 通用 › 登录项与扩展」中被关闭，需要打开 UU远程伴侣 的开关。它不需要辅助功能等其他权限。只有在这里开启时才会安装并加载到内存，关闭即卸载。")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 12) {
@@ -396,7 +373,7 @@ struct FallbackPanel: View {
             }
 
             if !model.watchdogEnabled {
-                Label("未开启看门狗时，如果 UUDisplay 意外退出，物理屏会保持关闭：重新打开 UUDisplay 或重启 Mac 即可恢复。",
+                Label("未开启看门狗时，如果 UU远程伴侣 意外退出，物理屏会保持关闭：重新打开 UU远程伴侣 或重启 Mac 即可恢复。",
                       systemImage: "info.circle")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
@@ -474,7 +451,7 @@ struct SettingsView: View {
                     Label("立即恢复所有屏幕", systemImage: "display.2")
                 }
                 .disabled(!model.physicalOff)
-                .help(model.physicalOff ? "等同快捷键 ⌃⌥⌘R" : "当前没有被关闭的物理屏")
+                .help(model.physicalOff ? "等同快捷键 ⌃ control + ⌥ option + ⌘ command + 9" : "当前没有被关闭的物理屏")
                 Button { model.openPermissions?() } label: { Label("权限设置", systemImage: "hand.raised") }
                 Button { model.openTour?() } label: { Label("功能导览", systemImage: "sparkles") }
             }
@@ -488,7 +465,7 @@ struct SettingsView: View {
                 Spacer()
                 Button("关于本应用") { model.showAbout() }
                 Button("完全退出", role: .destructive) { model.quitCompletely() }
-                    .help("退出 UUDisplay，并停止本次登录中的看门狗")
+                    .help("退出 UU远程伴侣，并停止本次登录中的看门狗")
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
@@ -532,7 +509,7 @@ final class SettingsWindowController {
         hosting.sizingOptions = [.preferredContentSize]
         let w = NSWindow(contentViewController: hosting)
         w.styleMask = [.titled, .closable, .miniaturizable]
-        w.title = "UU远程分辨率伴侣 设置"
+        w.title = "UU远程伴侣 设置"
         w.isReleasedWhenClosed = false
         w.setContentSize(hosting.view.fittingSize)  // 先定好尺寸再居中，否则按 0×0 居中会偏到右侧
         w.center()

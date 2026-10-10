@@ -1,4 +1,4 @@
-// UU远程分辨率伴侣：本机被 UU远程 控制时，按控制端设备自动建虚拟屏并设为主屏，断开后还原
+// UU远程伴侣：本机被 UU远程 控制时，按控制端设备自动建虚拟屏并设为主屏，断开后还原
 // 调试：UUDisplay --simulate "<设备名>" [秒数=10]  模拟一次连入/断开（不依赖 UU）
 //      UUDisplay --simulate "A>B" 8            先按 A 建屏，3 秒后识别为 B 重建
 //      UUDisplay --render-settings <目录>       渲染设置窗口各面板为 PNG
@@ -166,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 全局快捷键 ⌃⌥⌘R：立即恢复物理屏（Carbon 热键，无需任何权限）
+    /// 全局快捷键 ⌃⌥⌘9：立即恢复物理屏（Carbon 热键，无需任何权限）
     private func installHotkey() {
         var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let me = Unmanaged.passUnretained(self).toOpaque()
@@ -177,9 +177,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return noErr
         }, 1, &spec, me, nil)
         let id = EventHotKeyID(signature: OSType(0x5555_4453), id: 1)  // 'UUDS'
-        let err = RegisterEventHotKey(UInt32(kVK_ANSI_R), UInt32(cmdKey | optionKey | controlKey), id,
+        let err = RegisterEventHotKey(UInt32(kVK_ANSI_9), UInt32(cmdKey | optionKey | controlKey), id,
                                       GetApplicationEventTarget(), 0, &hotKeyRef)
-        Log.info(err == noErr ? "已注册快捷键 ⌃⌥⌘R" : "⚠️ 快捷键 ⌃⌥⌘R 注册失败 \(err)")
+        Log.info(err == noErr ? "已注册快捷键 ⌃⌥⌘9" : "⚠️ 快捷键 ⌃⌥⌘9 注册失败 \(err)")
     }
 
     /// 压测：随机连入/换设备/断开，间隔 0.3–6 秒，制造上一轮未收尾就进入下一轮的情况

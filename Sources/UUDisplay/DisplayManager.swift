@@ -274,7 +274,7 @@ final class DisplayManager {
     private func createDisplay(_ cfg: DeviceConfig) -> Bool {
         let w = cfg.width, h = cfg.height
         let desc = CGVirtualDisplayDescriptor()
-        desc.name = "UUDisplay · \(cfg.name)"
+        desc.name = "UUyc companion · \(cfg.name)"  // 显示在 UU 的多显示屏列表、系统显示器设置中
         desc.maxPixelsWide = UInt32(w)
         desc.maxPixelsHigh = UInt32(h)
         desc.sizeInMillimeters = CGSize(width: Double(w) / 220 * 25.4, height: Double(h) / 220 * 25.4)

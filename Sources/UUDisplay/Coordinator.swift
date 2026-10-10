@@ -29,7 +29,7 @@ final class Coordinator {
         monitor.start()
     }
 
-    /// 开关打开且私有 API 可用时关闭物理屏；看门狗是可选兜底（快捷键 ⌃⌥⌘R 始终可用）
+    /// 开关打开且私有 API 可用时关闭物理屏；看门狗是可选兜底（快捷键 ⌃⌥⌘9 始终可用）
     var physicalDisableAllowed: Bool {
         store.config.shouldDisablePhysical && PhysicalDisplays.available
     }
@@ -157,7 +157,7 @@ final class Coordinator {
         onChange?()
     }
 
-    /// 快捷键 ⌃⌥⌘R / 菜单：立即恢复物理屏
+    /// 快捷键 ⌃⌥⌘9 / 菜单：立即恢复物理屏
     func restorePhysical() {
         Log.info("手动恢复物理屏")
         display.restorePhysicalNow()

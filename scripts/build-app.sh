@@ -1,12 +1,17 @@
 #!/bin/zsh
-# 构建 UUDisplay.app（「UUDisplay Signing」证书签名）。用法：scripts/build-app.sh [--install]
+# 构建「UUyc companion.app」（中文系统显示为「UU远程伴侣」，「UUDisplay Signing」证书签名）。
+# 用法：scripts/build-app.sh [--install]
+# 对外名称已改，内部标识保持不变：Bundle ID com.corndog.uudisplay（辅助功能授权按它识别）、
+# 可执行文件 UUDisplay / UUDisplayWatchdog、配置目录与日志文件名
 # 固定证书签名后，签名要求不随每次构建变化，升级后「辅助功能」等授权可保留（ad-hoc 签名每次都会失效）
 # --install：复制到 /Applications 并启动
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION="0.1.0"
-APP="build/UUDisplay.app"
+APP_NAME="UUyc companion"
+APP="build/$APP_NAME.app"
+LEGACY_APP="/Applications/UUDisplay.app"   # 改名前的安装位置
 SIGN_IDENTITY="${SIGN_IDENTITY:-UUDisplay Signing}"
 
 if ! security find-identity -v -p codesigning | grep -q "\"$SIGN_IDENTITY\""; then
@@ -34,8 +39,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>com.corndog.uudisplay</string>
   <key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
   <key>CFBundleLocalizations</key><array><string>zh-Hans</string><string>en</string></array>
-  <key>CFBundleName</key><string>UUDisplay</string>
-  <key>CFBundleDisplayName</key><string>UU远程分辨率伴侣</string>
+  <key>CFBundleName</key><string>UUyc companion</string>
+  <key>CFBundleDisplayName</key><string>UUyc companion</string>
+  <key>LSHasLocalizedDisplayName</key><true/>
   <key>CFBundleExecutable</key><string>UUDisplay</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
@@ -47,6 +53,11 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 # 看门狗 LaunchAgent 由 App 运行时写入 ~/Library/LaunchAgents 并用 launchctl 加载（见 WatchdogAgent）
+# 本地化名称：中文系统显示「UU远程伴侣」，其他语言显示「UUyc companion」
+mkdir -p "$APP/Contents/Resources/zh-Hans.lproj" "$APP/Contents/Resources/en.lproj"
+printf '"CFBundleDisplayName" = "UU远程伴侣";\n"CFBundleName" = "UU远程伴侣";\n' > "$APP/Contents/Resources/zh-Hans.lproj/InfoPlist.strings"
+printf '"CFBundleDisplayName" = "UUyc companion";\n"CFBundleName" = "UUyc companion";\n' > "$APP/Contents/Resources/en.lproj/InfoPlist.strings"
+
 # 先签内嵌的看门狗可执行文件，再签整个 App
 codesign --force --sign "$SIGN_IDENTITY" --identifier com.corndog.uudisplay.watchdog "$APP/Contents/MacOS/UUDisplayWatchdog"
 codesign --force --sign "$SIGN_IDENTITY" --identifier com.corndog.uudisplay "$APP"
@@ -56,8 +67,8 @@ echo "✅ 已生成 $APP"
 if [[ "${1:-}" == "--install" ]]; then
   pkill -x UUDisplay 2>/dev/null && sleep 1 || true
   pkill -x UUDisplayWatchdog 2>/dev/null || true
-  rm -rf /Applications/UUDisplay.app
+  rm -rf "$LEGACY_APP" "/Applications/$APP_NAME.app"
   cp -R "$APP" /Applications/
-  open /Applications/UUDisplay.app
+  open "/Applications/$APP_NAME.app"
   echo "✅ 已安装到 /Applications 并启动"
 fi

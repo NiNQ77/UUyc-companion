@@ -26,8 +26,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     func refresh() {
         let active = coordinator.display.isActive
         let symbol = store.config.paused ? "pause.rectangle" : (active ? "ipad.landscape" : "rectangle.on.rectangle")
-        item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "UU远程分辨率伴侣")
-        item.button?.toolTip = "UU远程分辨率伴侣：\(coordinator.statusText)"
+        item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "UU远程伴侣")
+        item.button?.toolTip = "UU远程伴侣：\(coordinator.statusText)"
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
@@ -47,7 +47,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        let restore = action("立即恢复所有屏幕（⌃⌥⌘R）", #selector(restorePhysical))
+        let restore = action("立即恢复所有屏幕（⌃ control + ⌥ option + ⌘ command + 9）", #selector(restorePhysical))
         restore.isEnabled = coordinator.display.physicalOff || PhysicalDisplays.pending != nil
         menu.addItem(restore)
         let physical = action("远程时关闭物理屏", #selector(toggleDisablePhysical))
@@ -126,7 +126,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             Log.info("⚠️ 开机自启设置失败：\(error.localizedDescription)")
             let alert = NSAlert()
             alert.messageText = "开机自启设置失败"
-            alert.informativeText = "\(error.localizedDescription)\n请把 UUDisplay.app 放到「应用程序」文件夹后再试。"
+            alert.informativeText = "\(error.localizedDescription)\n请把 UU远程伴侣 放到「应用程序」文件夹后再试。"
             alert.runModal()
         }
     }

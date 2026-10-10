@@ -6,14 +6,14 @@ import TourKit
 
 enum Tour {
     static let pages: [(image: String, title: LocalizedStringKey, description: LocalizedStringKey)] = [
-        ("tour-welcome", "欢迎使用 UU远程分辨率伴侣",
+        ("tour-welcome", "欢迎使用 UU远程伴侣",
          "用平板或手机通过 UU远程 控制这台 Mac 时，自动准备一块分辨率与它完全一致的屏幕。"),
         ("tour-match", "连入即切换，铺满无黑边",
          "识别连进来的设备，几秒内建好对应分辨率的虚拟屏并设为主屏，文字清晰；断开后自动还原。"),
         ("tour-physical", "远程时只留一块屏",
          "可在设置中开启：远程期间关闭 DELL、内建屏等物理屏，窗口不会跑到看不见的地方。电脑连入时不做任何改动。"),
         ("tour-safety", "多重兜底，随时恢复",
-         "在 Mac 键盘上按 ⌃⌥⌘R 立即点亮所有屏幕；可选开启后台看门狗自动守护；重启也一定恢复。"),
+         "在 Mac 键盘上按 ⌃ control + ⌥ option + ⌘ command + 9 立即点亮所有屏幕；可选开启后台看门狗自动守护；重启也一定恢复。"),
         ("tour-setup", "还差两步设置",
          "授予辅助功能权限，再确认各设备的分辨率。之后随时可从菜单栏图标重新配置或再看导览。"),
     ]
@@ -246,11 +246,15 @@ private struct PhysicalArt: View {
 
 private struct KeyCap: View {
     let label: String
+    /// 修饰键的英文名（照顾不熟悉符号的新用户）
+    var name: String? = nil
     var body: some View {
-        Text(label)
-            .font(.system(size: 40, weight: .medium, design: .rounded))
+        VStack(spacing: 4) {
+            Text(label).font(.system(size: name == nil ? 40 : 34, weight: .medium, design: .rounded))
+            if let name { Text(name).font(.system(size: 14, weight: .medium)) }
+        }
             .foregroundStyle(.white)
-            .frame(width: 84, height: 84)
+            .frame(width: name == nil ? 84 : 104, height: 84)
             .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(white: 0.20)))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.white.opacity(0.25), lineWidth: 1))
             .shadow(color: .black.opacity(0.5), radius: 6, y: 5)
@@ -266,10 +270,10 @@ private struct SafetyArt: View {
                     .foregroundStyle(accent)
                     .shadow(color: .blue.opacity(0.6), radius: 20)
                 HStack(spacing: 14) {
-                    KeyCap(label: "⌃")
-                    KeyCap(label: "⌥")
-                    KeyCap(label: "⌘")
-                    KeyCap(label: "R")
+                    KeyCap(label: "⌃", name: "control")
+                    KeyCap(label: "⌥", name: "option")
+                    KeyCap(label: "⌘", name: "command")
+                    KeyCap(label: "9")
                 }
             }
         }

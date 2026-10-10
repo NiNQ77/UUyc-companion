@@ -88,7 +88,7 @@ struct PermissionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("授权 UU远程分辨率伴侣").font(.title2.bold())
+                Text("授权 UU远程伴侣").font(.title2.bold())
                 Text("完成下面的授权后，平板或手机连入时才能自动识别设备并切换分辨率。")
                     .foregroundStyle(.secondary)
             }
@@ -103,7 +103,7 @@ struct PermissionsView: View {
                 ok: model.axGranted,
                 okText: "已授权",
                 pendingText: "未授权",
-                tip: "点「授权」会打开系统设置，并在旁边出现一个小面板，把面板里的 UUDisplay 拖进列表即可。\n如果列表里已有 UUDisplay 却仍显示未授权（旧版签名留下的记录）：先选中它点「−」删除，再重新拖入。"
+                tip: "点「授权」会打开系统设置，并在旁边出现一个小面板，把面板里的 UU远程伴侣 拖进列表即可。\n如果列表里已有 UU远程伴侣 或 UUDisplay（旧版名称）却仍显示未授权：先选中它点「−」删除，再重新拖入。"
             ) {
                 PermissionFlowButton(
                     pane: .accessibility,
