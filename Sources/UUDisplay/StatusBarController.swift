@@ -23,10 +23,22 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         refresh()
     }
 
+    /// 菜单栏图标：Assets/AppIcon/MenuBarIconTemplate（模板图，深色菜单栏自动反白）；
+    /// 非 .app 运行（调试）找不到资源时退回系统图标
+    private static let menuBarIcon: NSImage = {
+        if let image = NSImage(named: "MenuBarIconTemplate") {
+            image.isTemplate = true
+            image.size = NSSize(width: 18, height: 18)
+            return image
+        }
+        return NSImage(systemSymbolName: "rectangle.on.rectangle", accessibilityDescription: nil)!
+    }()
+
     func refresh() {
-        let active = coordinator.display.isActive
-        let symbol = store.config.paused ? "pause.rectangle" : (active ? "ipad.landscape" : "rectangle.on.rectangle")
-        item.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "UU远程伴侣")
+        let icon = StatusBarController.menuBarIcon
+        icon.accessibilityDescription = "UU远程伴侣"
+        item.button?.image = icon
+        item.button?.appearsDisabled = store.config.paused  // 暂停自动切换时图标变灰
         item.button?.toolTip = "UU远程伴侣：\(coordinator.statusText)"
     }
 
@@ -47,7 +59,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        let restore = action("立即恢复所有屏幕（⌃ control + ⌥ option + ⌘ command + 9）", #selector(restorePhysical))
+        let restore = action("立即恢复所有屏幕（⌃⌥⌘+9）", #selector(restorePhysical))
         restore.isEnabled = coordinator.display.physicalOff || PhysicalDisplays.pending != nil
         menu.addItem(restore)
         let physical = action("远程时关闭物理屏", #selector(toggleDisablePhysical))

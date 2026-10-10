@@ -31,6 +31,8 @@ cp "$BIN" "$APP/Contents/MacOS/UUDisplayWatchdog"
 cp -R "$(dirname "$BIN")/PermissionFlow_PermissionFlow.bundle" "$APP/Contents/Resources/"
 # 功能导览配图（TourKit 从 Bundle.main 的 Resources 根目录按文件名查找）
 cp Assets/Tour/*.png "$APP/Contents/Resources/"
+# App 图标与菜单栏模板图（见 Assets/AppIcon/README.md）
+cp Assets/AppIcon/AppIcon.icns Assets/AppIcon/MenuBarIconTemplate.png Assets/AppIcon/MenuBarIconTemplate@2x.png "$APP/Contents/Resources/"
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -43,6 +45,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleDisplayName</key><string>UUyc companion</string>
   <key>LSHasLocalizedDisplayName</key><true/>
   <key>CFBundleExecutable</key><string>UUDisplay</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
   <key>CFBundleVersion</key><string>${VERSION}</string>
