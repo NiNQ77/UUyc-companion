@@ -8,14 +8,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION="0.1.0"
+VERSION="1.0.0"
 APP_NAME="UUyc companion"
 APP="build/$APP_NAME.app"
 LEGACY_APP="/Applications/UUDisplay.app"   # 改名前的安装位置
 SIGN_IDENTITY="${SIGN_IDENTITY:-UUDisplay Signing}"
 
-if ! security find-identity -v -p codesigning | grep -q "\"$SIGN_IDENTITY\""; then
-  echo "❌ 钥匙串中找不到有效的代码签名证书「$SIGN_IDENTITY」" >&2
+# SIGN_IDENTITY=- 表示 ad-hoc 签名（没有证书时从源码构建用；每次构建后辅助功能授权会失效）
+if [[ "$SIGN_IDENTITY" != "-" ]] && ! security find-identity -v -p codesigning | grep -q "\"$SIGN_IDENTITY\""; then
+  echo "❌ 钥匙串中找不到有效的代码签名证书「$SIGN_IDENTITY」；没有证书可用 SIGN_IDENTITY=- 改为 ad-hoc 签名" >&2
   exit 1
 fi
 
