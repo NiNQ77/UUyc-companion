@@ -88,8 +88,8 @@ struct PermissionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("授权 UU远程伴侣").font(.title2.bold())
-                Text("完成下面的授权后，平板或手机连入时才能自动识别设备并切换分辨率。")
+                Text("允许 UU远程伴侣 读取设备名称").font(.title2.bold())
+                Text("这样平板或手机连上时，它才能认出是哪台设备，并换上合适的屏幕尺寸。")
                     .foregroundStyle(.secondary)
             }
 
@@ -99,11 +99,11 @@ struct PermissionsView: View {
                 title: Text(PermissionFlowResources.localizedString(
                     for: PermissionFlowResources.accessibilityName(), localeIdentifier: "zh-Hans")),
                 tag: "必需",
-                detail: "读取 UU远程 的设备列表，识别是哪台设备连进来。",
+                detail: "用来读取 UU远程 里显示的设备名称，不会读取你的其他内容。",
                 ok: model.axGranted,
                 okText: "已授权",
                 pendingText: "未授权",
-                tip: "点「授权」会打开系统设置，并在旁边出现一个小面板，把面板里的 UU远程伴侣 拖进列表即可。\n如果列表里已有 UU远程伴侣 或 UUDisplay（旧版名称）却仍显示未授权：先选中它点「−」删除，再重新拖入。"
+                tip: "点「授权」会打开系统设置，旁边会出现一个小窗口，把里面的 UU远程伴侣 拖进列表就好。\n如果列表里已经有 UU远程伴侣 或 UUDisplay（旧名字），开关也开着，却还是显示未授权：先选中它，点「−」删掉，再拖一次。"
             ) {
                 PermissionFlowButton(
                     pane: .accessibility,
@@ -118,7 +118,7 @@ struct PermissionsView: View {
 
             HStack {
                 if model.allGranted {
-                    Label("全部就绪", systemImage: "checkmark.seal.fill").foregroundStyle(.green)
+                    Label("已经准备好了", systemImage: "checkmark.seal.fill").foregroundStyle(.green)
                 }
                 Spacer()
                 if model.allGranted {

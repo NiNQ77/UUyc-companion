@@ -16,7 +16,7 @@ final class WizardModel: ObservableObject {
     func load() {
         trusted = UUReader.isTrusted
         guard trusted else {
-            message = "需要先授权才能读取 UU 设备列表。授权后点「重新读取」。"
+            message = "需要先完成授权，才能读到 UU远程 里的设备。授权后点「重新读取」。"
             rows = store.config.devices
             defaultDevice = store.config.defaultDevice ?? ""
             return
@@ -30,8 +30,8 @@ final class WizardModel: ObservableObject {
         for old in store.config.devices where !merged.contains(where: { $0.name == old.name }) { merged.append(old) }
         rows = merged
         message = found.isEmpty
-            ? "没读到 UU 设备列表。请打开 UU远程 主界面并停在「全部设备」，再点「重新读取」；也可以手动添加。"
-            : "从 UU 读到 \(found.count) 台设备（已排除本机），请确认类型和分辨率。"
+            ? "没有读到设备。请打开 UU远程，停在「全部设备」页面，再点「重新读取」；也可以在下方手动添加。"
+            : "在 UU远程 里找到 \(found.count) 台设备（不含这台 Mac）。请确认每台设备的类型，以及要用的屏幕尺寸。"
         defaultDevice = store.config.defaultDevice ?? rows.first { $0.kind == .tablet }?.name ?? ""
     }
 
@@ -74,7 +74,7 @@ struct DeviceRow: View {
             .pickerStyle(.segmented).labelsHidden().frame(width: 150)
 
             if cfg.kind == .computer {
-                Text("不切换").foregroundStyle(.secondary)
+                Text("保持原样").foregroundStyle(.secondary)
                 Spacer()
             } else {
                 Picker("", selection: presetBinding) {
@@ -87,11 +87,11 @@ struct DeviceRow: View {
                     Text("×")
                     TextField("高", value: $cfg.height, format: .number.grouping(.never)).frame(width: 60)
                 }
-                Toggle("HiDPI", isOn: $cfg.hiDPI)
+                Toggle("高清", isOn: $cfg.hiDPI)
                 Spacer()
             }
             Button(role: .destructive, action: onDelete) { Image(systemName: "minus.circle") }
-                .buttonStyle(.borderless).help("移除")
+                .buttonStyle(.borderless).help("从列表中移除")
         }
     }
 }
@@ -106,12 +106,12 @@ struct WizardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(embedded ? "设备配置" : "UU远程伴侣 · 设备配置").font(.title2.bold())
+            Text(embedded ? "设置平板和手机" : "UU远程伴侣 · 设置平板和手机").font(.title2.bold())
             if let m = model.message { Text(m).foregroundStyle(.secondary) }
             if !model.trusted {
                 HStack {
                     Button("去授权…") { openPermissions?() }
-                    Text("授权完成后点「重新读取」").foregroundStyle(.secondary)
+                    Text("授权后点「重新读取」").foregroundStyle(.secondary)
                 }
             }
             Divider()
@@ -124,14 +124,14 @@ struct WizardView: View {
             }
             .frame(minHeight: 220)
             HStack {
-                TextField("手动添加设备（名称需与 UU 中一致）", text: $model.newName).frame(width: 260)
+                TextField("手动添加设备（名字要和 UU远程 里显示的一样）", text: $model.newName).frame(width: 260)
                 Button("添加", action: model.addManual)
                 Spacer()
             }
             Divider()
             HStack {
-                Picker("默认设备（读不到设备名时使用）", selection: $model.defaultDevice) {
-                    Text("无").tag("")
+                Picker("认不出设备时，默认当作", selection: $model.defaultDevice) {
+                    Text("不调整").tag("")
                     ForEach(model.rows.filter { $0.kind != .computer }) { Text($0.name).tag($0.name) }
                 }
                 .frame(width: 380)

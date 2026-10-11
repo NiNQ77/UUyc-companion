@@ -77,7 +77,7 @@ final class SettingsModel: ObservableObject {
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch {
-            loginError = "设置失败：\(error.localizedDescription)。请把 UU远程伴侣 放在「应用程序」文件夹后再试。"
+            loginError = "开机自动打开没有设置成功：\(error.localizedDescription)。请先把 UU远程伴侣 放进「应用程序」文件夹，再试一次。"
             Log.info("⚠️ 开机启动设置失败：\(error.localizedDescription)")
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -109,7 +109,7 @@ final class SettingsModel: ObservableObject {
     func showAbout() {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "开发版"
         let credits = NSAttributedString(
-            string: "平板或手机通过 UU远程 控制这台 Mac 时，自动建立分辨率完全匹配的虚拟屏，断开后自动还原。\n\n开源组件：PermissionFlow、TourKit、FreeDisplay 虚拟屏接口声明（均为 MIT 协议）",
+            string: "用平板或手机通过 UU远程 操控这台 Mac 时，它会自动准备一块和你的设备尺寸一致的屏幕，让画面刚好铺满；断开后一切恢复原样。\n\n使用的开源组件：PermissionFlow、TourKit、FreeDisplay（均为 MIT 协议）",
             attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor])
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
@@ -162,7 +162,7 @@ struct HotkeyKeysView: View {
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.06)))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("快捷键示意图：同时按下 control、option、command 和 9")
+        .accessibilityLabel("快捷键：同时按下 control、option、command 和 9")
     }
 
     private var plus: some View {
@@ -295,24 +295,24 @@ struct ControlledPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("设置被控制端").font(.title3.bold())
-            row("开机时启动 UU远程伴侣",
-                "登录 Mac 后自动在菜单栏运行，随时准备接收 UU 远程连入。",
+            Text("设置这台 Mac").font(.title3.bold())
+            row("开机时自动打开",
+                "开机后它会安静地待在菜单栏里，平板或手机随时连上都能用。",
                 isOn: Binding(get: { model.launchAtLogin }, set: { model.toggleLaunchAtLogin($0) }))
             if let err = model.loginError {
                 Text(err).font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
             }
             Divider()
-            row("自动启动虚拟屏",
-                "平板或手机连入时，自动建立分辨率与它一致的虚拟屏并设为主屏；断开后自动移除。关闭后连入时不做任何改动。",
+            row("自动准备虚拟屏幕",
+                "平板或手机连上这台 Mac 时，自动准备一块和它尺寸一致的屏幕，远程画面刚好铺满、文字清晰；断开后自动收起。关掉后，连上时不做任何调整。",
                 isOn: Binding(get: { model.autoVirtual }, set: { model.toggleAutoVirtual($0) }))
             Divider()
-            row("自动软关闭除虚拟屏之外的显示器",
-                "远程期间暂时关闭外接显示器和内建屏，只保留那块虚拟屏，窗口不会跑到看不见的地方；断开后自动恢复。电脑连入时不受影响。打开后可在「兜底选项」里查看万一屏幕没恢复时的找回方法。",
+            row("远程时熄灭 Mac 的屏幕",
+                "远程期间，Mac 自带的屏幕和外接显示器会暂时熄灭，只留下那块虚拟屏幕，打开的窗口不会跑到你看不见的地方。断开后屏幕会自动亮回来。用电脑连接时不受影响。万一屏幕没有亮回来，可以看看「找回屏幕的方法」。",
                 isOn: Binding(get: { model.disablePhysical }, set: { model.toggleDisablePhysical($0) }),
                 enabled: model.autoVirtual)
             if !model.autoVirtual {
-                Text("需要先打开「自动启动虚拟屏」。").font(.caption).foregroundStyle(.secondary)
+                Text("要先打开「自动准备虚拟屏幕」。").font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(24)
@@ -327,53 +327,53 @@ struct FallbackPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("兜底选项").font(.title3.bold())
-                Text("万一远程结束后屏幕没有自动恢复，可以用下面的方式找回。").foregroundStyle(.secondary)
+                Text("找回屏幕的方法").font(.title3.bold())
+                Text("远程结束后，屏幕一般会自动亮回来。万一没有，用下面的方法就能找回。").foregroundStyle(.secondary)
             }
 
-            Card(icon: "keyboard", title: "快捷键", tag: "始终可用") {
-                Text("坐在 Mac 前、屏幕黑着时，同时按下 **⌃ control + ⌥ option + ⌘ command + 9**，立即恢复所有物理屏。虚拟屏保留，本次连接内不再关闭物理屏。")
+            Card(icon: "keyboard", title: "快捷键", tag: "随时可用") {
+                Text("坐在 Mac 前、屏幕黑着的时候，同时按下 **⌃ control + ⌥ option + ⌘ command + 9**，所有屏幕会立刻亮起来。远程画面不受影响，这次连接期间也不会再熄灭屏幕。")
                     .fixedSize(horizontal: false, vertical: true)
                 HotkeyKeysView()
-                Text("设置窗口和菜单栏里的「立即恢复所有屏幕」效果相同。")
+                Text("点设置窗口或菜单栏里的「立即恢复所有屏幕」，效果一样。")
                     .font(.callout).foregroundStyle(.secondary)
             }
 
-            Card(icon: "shield.lefthalf.filled", title: "看门狗", tag: "可选") {
-                Text("一个独立的后台小程序，每 5 秒检查一次。出现以下任一情况时，自动恢复物理屏：")
+            Card(icon: "shield.lefthalf.filled", title: "后台守护", tag: "可选") {
+                Text("打开后，会有一个小助手在后台值守，每 5 秒看一眼。遇到下面任一情况，它会自动把屏幕点亮：")
                     .fixedSize(horizontal: false, vertical: true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("• UU远程伴侣 崩溃或被强制退出")
-                    Text("• UU远程伴侣 卡住超过 10 秒（会先结束它）")
-                    Text("• UU 远程已断开 5 秒以上，屏幕却还关着")
+                    Text("• UU远程伴侣 意外退出")
+                    Text("• UU远程伴侣 卡住超过 10 秒没反应")
+                    Text("• UU远程 已经断开，屏幕却一直没亮")
                 }
                 .font(.callout)
-                Text("看门狗被结束后，系统会在 5 秒内把它重新拉起。")
+                Text("就算这个小助手自己被关掉，系统也会在 5 秒内重新打开它。")
                     .font(.callout).foregroundStyle(.secondary)
 
                 Divider()
-                Text("需要的权限").font(.subheadline.bold())
-                Text("开启后，看门狗会安装为登录项（后台项目），macOS 会提示「已添加后台项目」。如果它在「系统设置 › 通用 › 登录项与扩展」中被关闭，需要打开 UU远程伴侣 的开关。它不需要辅助功能等其他权限。只有在这里开启时才会安装并加载到内存，关闭即卸载。")
+                Text("需要你允许的事").font(.subheadline.bold())
+                Text("打开后，macOS 会提示「已添加后台项目」，这是正常的。如果之后在「系统设置 › 通用 › 登录项与扩展」里关掉了 UU远程伴侣，守护就会失效，重新打开即可。它不需要其他权限；关掉这个开关，它就会被彻底移除。")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 12) {
                     Toggle(isOn: Binding(get: { model.watchdogEnabled }, set: { model.toggleWatchdog($0) })) {
-                        Text("开启看门狗")
+                        Text("打开后台守护")
                     }
                     .toggleStyle(.switch)
                     if model.watchdogEnabled {
-                        Label(model.watchdogRunning ? "运行中" : "未运行",
+                        Label(model.watchdogRunning ? "正在值守" : "没有运行",
                               systemImage: model.watchdogRunning ? "checkmark.circle.fill" : "exclamationmark.circle")
                             .foregroundStyle(model.watchdogRunning ? .green : .orange)
                         if !model.watchdogRunning {
-                            Button("打开登录项与扩展") { SystemSettings.open(.loginItems) }
+                            Button("去系统设置里允许") { SystemSettings.open(.loginItems) }
                         }
                     }
                 }
             }
 
             if !model.watchdogEnabled {
-                Label("未开启看门狗时，如果 UU远程伴侣 意外退出，物理屏会保持关闭：重新打开 UU远程伴侣 或重启 Mac 即可恢复。",
+                Label("没打开后台守护时：如果 UU远程伴侣 意外退出，屏幕可能会一直黑着。重新打开 UU远程伴侣 或重启 Mac 就能恢复。",
                       systemImage: "info.circle")
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
@@ -413,19 +413,19 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             // 上：工作原理图
             HStack(alignment: .top, spacing: 0) {
-                FlowNode(caption: "控制端设备", buttonTitle: "设置控制端",
+                FlowNode(caption: "你的平板和手机", buttonTitle: "设置平板和手机",
                          selected: model.expanded == .controller, action: { model.toggle(.controller) }) {
                     ControllerIcon()
                 }
-                DashedConnector(label: "UU 远程控制")
-                FlowNode(caption: "被控制的 Mac", buttonTitle: "设置被控制端",
+                DashedConnector(label: "通过 UU远程 操控")
+                FlowNode(caption: "这台 Mac", buttonTitle: "设置这台 Mac",
                          selected: model.expanded == .controlled, action: { model.toggle(.controlled) }) {
                     Image(systemName: "desktopcomputer")
                 }
-                DashedConnector(label: "关闭物理屏时")
-                FlowNode(caption: "兜底保护", buttonTitle: "兜底选项",
+                DashedConnector(label: "熄灭 Mac 屏幕时")
+                FlowNode(caption: "万一屏幕没亮", buttonTitle: "找回屏幕的方法",
                          enabled: model.fallbackAvailable, selected: model.expanded == .fallback,
-                         hint: model.fallbackAvailable ? nil : "先在「设置被控制端」中打开「自动软关闭除虚拟屏之外的显示器」",
+                         hint: model.fallbackAvailable ? nil : "先在「设置这台 Mac」里打开「远程时熄灭 Mac 的屏幕」",
                          action: { model.toggle(.fallback) }) {
                     Image(systemName: "lifepreserver")
                 }
@@ -451,9 +451,9 @@ struct SettingsView: View {
                     Label("立即恢复所有屏幕", systemImage: "display.2")
                 }
                 .disabled(!model.physicalOff)
-                .help(model.physicalOff ? "等同快捷键 ⌃ control + ⌥ option + ⌘ command + 9" : "当前没有被关闭的物理屏")
+                .help(model.physicalOff ? "也可以按 ⌃ control + ⌥ option + ⌘ command + 9" : "现在没有熄灭的屏幕")
                 Button { model.openPermissions?() } label: { Label("权限设置", systemImage: "hand.raised") }
-                Button { model.openTour?() } label: { Label("功能导览", systemImage: "sparkles") }
+                Button { model.openTour?() } label: { Label("功能介绍", systemImage: "sparkles") }
             }
             .controlSize(.large)
             .padding(.vertical, 16)
@@ -463,9 +463,9 @@ struct SettingsView: View {
             // 下：关于 / 完全退出
             HStack(spacing: 10) {
                 Spacer()
-                Button("关于本应用") { model.showAbout() }
+                Button("关于 UU远程伴侣") { model.showAbout() }
                 Button("完全退出", role: .destructive) { model.quitCompletely() }
-                    .help("退出 UU远程伴侣，并停止本次登录中的看门狗")
+                    .help("关闭 UU远程伴侣，后台守护也会一起停下（下次打开时恢复）")
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)

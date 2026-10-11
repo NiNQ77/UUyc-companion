@@ -48,12 +48,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         status.isEnabled = false
         menu.addItem(status)
         if !UUReader.isTrusted {
-            let warn = NSMenuItem(title: "⚠️ 未授权辅助功能，无法识别设备名", action: #selector(showPermissions), keyEquivalent: "")
+            let warn = NSMenuItem(title: "⚠️ 还没授权，认不出连接的设备", action: #selector(showPermissions), keyEquivalent: "")
             warn.target = self
             menu.addItem(warn)
         }
         if store.config.shouldDisablePhysical && store.config.shouldRunWatchdog && !Watchdog.isRunning {
-            let warn = NSMenuItem(title: "⚠️ 看门狗已开启但未运行", action: #selector(showDisplaySettings), keyEquivalent: "")
+            let warn = NSMenuItem(title: "⚠️ 后台守护已打开，但没有运行", action: #selector(showDisplaySettings), keyEquivalent: "")
             warn.target = self
             menu.addItem(warn)
         }
@@ -62,18 +62,18 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         let restore = action("立即恢复所有屏幕（⌃⌥⌘+9）", #selector(restorePhysical))
         restore.isEnabled = coordinator.display.physicalOff || PhysicalDisplays.pending != nil
         menu.addItem(restore)
-        let physical = action("远程时关闭物理屏", #selector(toggleDisablePhysical))
+        let physical = action("远程时熄灭 Mac 屏幕", #selector(toggleDisablePhysical))
         physical.state = store.config.shouldDisablePhysical ? .on : .off
         menu.addItem(physical)
         menu.addItem(.separator())
 
         menu.addItem(action("设置…", #selector(reconfigure), key: ","))
         menu.addItem(action("权限设置…", #selector(showPermissions)))
-        menu.addItem(action("功能导览…", #selector(showTour)))
+        menu.addItem(action("功能介绍…", #selector(showTour)))
 
         let defaults = NSMenuItem(title: "默认设备", action: nil, keyEquivalent: "")
         let sub = NSMenu()
-        let none = action("无", #selector(pickDefault(_:)))
+        let none = action("不调整", #selector(pickDefault(_:)))
         none.representedObject = ""
         none.state = store.config.defaultDevice == nil ? .on : .off
         sub.addItem(none)
@@ -90,7 +90,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         pause.state = store.config.paused ? .on : .off
         menu.addItem(pause)
 
-        let login = action("开机自启", #selector(toggleLogin))
+        let login = action("开机时自动打开", #selector(toggleLogin))
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
 
@@ -137,8 +137,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         } catch {
             Log.info("⚠️ 开机自启设置失败：\(error.localizedDescription)")
             let alert = NSAlert()
-            alert.messageText = "开机自启设置失败"
-            alert.informativeText = "\(error.localizedDescription)\n请把 UU远程伴侣 放到「应用程序」文件夹后再试。"
+            alert.messageText = "开机自动打开没有设置成功"
+            alert.informativeText = "\(error.localizedDescription)\n请先把 UU远程伴侣 放进「应用程序」文件夹，再试一次。"
             alert.runModal()
         }
     }

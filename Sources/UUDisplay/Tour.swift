@@ -7,15 +7,15 @@ import TourKit
 enum Tour {
     static let pages: [(image: String, title: LocalizedStringKey, description: LocalizedStringKey)] = [
         ("tour-welcome", "欢迎使用 UU远程伴侣",
-         "用平板或手机通过 UU远程 控制这台 Mac 时，自动准备一块分辨率与它完全一致的屏幕。"),
-        ("tour-match", "连入即切换，铺满无黑边",
-         "识别连进来的设备，几秒内建好对应分辨率的虚拟屏并设为主屏，文字清晰；断开后自动还原。"),
-        ("tour-physical", "远程时只留一块屏",
-         "可在设置中开启：远程期间关闭 DELL、内建屏等物理屏，窗口不会跑到看不见的地方。电脑连入时不做任何改动。"),
-        ("tour-safety", "多重兜底，随时恢复",
-         "在 Mac 键盘上按 ⌃ control + ⌥ option + ⌘ command + 9 立即点亮所有屏幕；可选开启后台看门狗自动守护；重启也一定恢复。"),
-        ("tour-setup", "还差两步设置",
-         "授予辅助功能权限，再确认各设备的分辨率。之后随时可从菜单栏图标重新配置或再看导览。"),
+         "用平板或手机通过 UU远程 操控这台 Mac 时，它会自动准备一块和你的设备尺寸完全一致的屏幕。"),
+        ("tour-match", "一连上，画面就刚好铺满",
+         "认出连进来的是哪台设备，几秒内换上合适的屏幕，没有黑边、文字清晰；断开后一切恢复原样。"),
+        ("tour-physical", "远程时只留一块屏幕",
+         "可以在设置里打开：远程期间暂时熄灭 Mac 自己的屏幕和外接显示器，窗口不会跑到你看不见的地方。用电脑连接时不受影响。"),
+        ("tour-safety", "万一出问题，也能马上找回",
+         "坐在 Mac 前按 ⌃ control + ⌥ option + ⌘ command + 9，所有屏幕立刻亮起来；还可以打开后台守护自动照看；重启 Mac 也一定能恢复。"),
+        ("tour-setup", "还差两步就能用了",
+         "先允许它读取设备名称，再确认每台设备的屏幕尺寸。之后随时可以点菜单栏图标修改设置，或再看一遍介绍。"),
     ]
 
     static let artworks: [String: AnyView] = [
@@ -210,7 +210,7 @@ private struct MatchArt: View {
                     Screen(width: 300, height: 208) {
                         VStack(spacing: 6) {
                             Text("2360 × 1640").font(.system(size: 30, weight: .bold, design: .rounded))
-                            Text("HiDPI").font(.system(size: 15, weight: .semibold, design: .rounded)).opacity(0.85)
+                            Text("高清").font(.system(size: 15, weight: .semibold, design: .rounded)).opacity(0.85)
                         }
                         .foregroundStyle(.white)
                     }
@@ -229,7 +229,7 @@ private struct PhysicalArt: View {
                     Screen(width: 230, height: 160, radius: 16, bezel: 9) {
                         Image(systemName: "ipad.landscape").font(.system(size: 54)).foregroundStyle(.white)
                     }
-                    Chip(text: "只保留虚拟屏", symbol: "sparkles")
+                    Chip(text: "只留虚拟屏幕", symbol: "sparkles")
                 }
                 HStack(alignment: .bottom, spacing: 40) {
                     Laptop(lit: false)
@@ -301,8 +301,8 @@ private struct SetupArt: View {
     var body: some View {
         ArtBackground(tint: .blue) {
             VStack(spacing: 18) {
-                Row(symbol: "hand.raised.fill", title: "辅助功能权限")
-                Row(symbol: "rectangle.on.rectangle", title: "设备与分辨率")
+                Row(symbol: "hand.raised.fill", title: "允许读取设备名称")
+                Row(symbol: "rectangle.on.rectangle", title: "确认屏幕尺寸")
             }
         }
     }

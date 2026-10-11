@@ -35,14 +35,14 @@ final class Coordinator {
     }
 
     var statusText: String {
-        if display.wedged { return "⛔️ 显示配置无响应，请注销或重启 Mac" }
-        if store.config.paused { return "已暂停自动切换" }
-        guard connected else { return "等待 UU 连入" }
+        if display.wedged { return "⛔️ 屏幕设置暂时卡住了，请重启 Mac" }
+        if store.config.paused { return "已暂停：连接时不做调整" }
+        guard connected else { return "等待平板或手机连接" }
         let who = controllerName ?? "未知设备"
         if let c = display.current, display.isActive {
-            return "\(who) 已连入 · 虚拟屏 \(c.sizeLabel)\(display.physicalOff ? " · 物理屏已关闭" : "")"
+            return "\(who) 已连接 · 屏幕已换成 \(c.sizeLabel)\(display.physicalOff ? " · Mac 屏幕已熄灭" : "")"
         }
-        return "\(who) 已连入 · 未切换"
+        return "\(who) 已连接 · 屏幕没有调整"
     }
 
     // MARK: - 事件

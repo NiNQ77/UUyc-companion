@@ -36,7 +36,7 @@ enum Presets {
         Preset(id: "ipad-mini", name: "iPad mini", kind: .tablet, width: 2266, height: 1488),
         Preset(id: "iphone-17", name: "iPhone 17", kind: .phone, width: 2622, height: 1206),
         Preset(id: "oppo-reno13-pro", name: "OPPO Reno13 Pro", kind: .phone, width: 2800, height: 1272),
-        Preset(id: "android-20x9", name: "通用安卓 20:9", kind: .phone, width: 2400, height: 1080),
+        Preset(id: "android-20x9", name: "其他安卓手机（20:9）", kind: .phone, width: 2400, height: 1080),
     ]
 
     static func preset(id: String?) -> Preset? { all.first { $0.id == id } }
@@ -72,7 +72,7 @@ struct DeviceConfig: Codable, Identifiable, Hashable {
     var hiDPI: Bool = true
     var id: String { name }
 
-    var sizeLabel: String { "\(width)×\(height)\(hiDPI ? " HiDPI" : "")" }
+    var sizeLabel: String { "\(width)×\(height)\(hiDPI ? " 高清" : "")" }
 
     static func make(name: String, kind: DeviceKind) -> DeviceConfig {
         let p = Presets.guess(name: name, kind: kind)
