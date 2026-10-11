@@ -8,7 +8,7 @@
 
 画面铺满、没有黑边、文字清晰；断开后一切恢复原样。
 
-[![最新版本](https://img.shields.io/github/v/release/aoyamashou/UUDisplay?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/aoyamashou/UUDisplay/releases/latest)
+[![最新版本](https://img.shields.io/github/v/release/aoyamashou/UUyc-companion?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/aoyamashou/UUyc-companion/releases/latest)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-%E6%94%AF%E6%8C%81-success)
 [![许可证 MIT](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-green)](LICENSE)
@@ -67,7 +67,7 @@ UU远程 的 Mac 被控端没有 Windows 版那样的「超级屏」（虚拟屏
 
 ## 下载
 
-前往 **[Releases 页面](https://github.com/aoyamashou/UUDisplay/releases/latest)**，下载 `UUyc-companion-<版本号>.zip`。
+前往 **[Releases 页面](https://github.com/aoyamashou/UUyc-companion/releases/latest)**，下载 `UUyc-companion-<版本号>.zip`。
 
 ## 安装
 
@@ -185,11 +185,11 @@ xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"
 需要 macOS 14 以上和 Xcode 命令行工具（Swift 6）：
 
 ```bash
-git clone https://github.com/aoyamashou/UUDisplay.git
+git clone https://github.com/aoyamashou/UUyc-companion.git
 ```
 
 ```bash
-cd UUDisplay && SIGN_IDENTITY=- scripts/build-app.sh
+cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 ```
 
 生成的 App 在 `build/UUyc companion.app`。加上 `--install` 参数会安装到「应用程序」文件夹并打开。
