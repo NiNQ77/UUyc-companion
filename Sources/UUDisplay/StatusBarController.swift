@@ -19,6 +19,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         super.init()
         let menu = NSMenu()
         menu.delegate = self
+        // 关闭自动启用，否则「立即恢复所有屏幕」等项设置的 isEnabled 会被覆盖（没熄灭屏幕时也可点）
+        menu.autoenablesItems = false
         item.menu = menu
         refresh()
     }

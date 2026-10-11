@@ -104,6 +104,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             stress(rounds: n)
             return
         }
+        if args.contains("--selftest-settings") {
+            selfTestSettings()
+            return
+        }
         if let i = args.firstIndex(of: "--simulate"), i + 1 < args.count {
             simulate(name: args[i + 1], seconds: i + 2 < args.count ? Double(args[i + 2]) ?? 10 : 10)
             return
@@ -180,6 +184,73 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let err = RegisterEventHotKey(UInt32(kVK_ANSI_9), UInt32(cmdKey | optionKey | controlKey), id,
                                       GetApplicationEventTarget(), 0, &hotKeyRef)
         Log.info(err == noErr ? "已注册快捷键 ⌃⌥⌘9" : "⚠️ 快捷键 ⌃⌥⌘9 注册失败 \(err)")
+    }
+
+    /// 自测：打开设置窗口，依次调用各按钮背后的操作，检查配置变化与窗口尺寸（不经过鼠标点击）
+    private func selfTestSettings() {
+        coordinator.display.shouldDisablePhysical = { [weak self] in self?.coordinator.physicalDisableAllowed ?? false }
+        let store = ConfigStore.shared
+        var steps: [(String, () -> Void, () -> String?)] = []   // 名称、操作、检查（返回 nil 表示通过）
+        var results: [String] = []
+        var heights: [String: CGFloat] = [:]
+        func m() -> SettingsModel { settings.currentModel! }
+        func h() -> CGFloat { settings.currentWindow?.frame.height ?? 0 }
+        var openedPermissions = false, openedTour = false, restored = false
+        settings.openPermissions = { openedPermissions = true }
+        settings.openTour = { openedTour = true }
+        settings.restorePhysical = { restored = true }
+
+        steps.append(("打开设置窗口", { self.settings.show() }, {
+            heights["收起"] = h(); return h() > 200 ? nil : "窗口高度 \(h())" }))
+        steps.append(("展开「设置平板和手机」", { m().toggle(.controller) }, {
+            heights["设备"] = h(); return (m().expanded == .controller && h() > heights["收起"]! + 300) ? nil : "expanded=\(String(describing: m().expanded)) 高度=\(h())" }))
+        steps.append(("再点一次收起", { m().toggle(.controller) }, {
+            (m().expanded == nil && abs(h() - heights["收起"]!) < 2) ? nil : "高度=\(h())" }))
+        steps.append(("展开「设置这台 Mac」", { m().toggle(.controlled) }, {
+            (m().expanded == .controlled && h() > heights["收起"]! + 150) ? nil : "高度=\(h())" }))
+        steps.append(("「找回屏幕的方法」在熄灭开关关闭时不可展开", { m().toggleDisablePhysical(false); m().toggle(.fallback) }, {
+            (!m().fallbackAvailable && m().expanded == .controlled) ? nil : "expanded=\(String(describing: m().expanded))" }))
+        steps.append(("关闭「自动准备虚拟屏幕」", { m().toggleAutoVirtual(false) }, {
+            (store.config.paused && !m().fallbackAvailable) ? nil : "paused=\(store.config.paused)" }))
+        steps.append(("打开「自动准备虚拟屏幕」", { m().toggleAutoVirtual(true) }, {
+            !store.config.paused ? nil : "paused 仍为 true" }))
+        steps.append(("打开「远程时熄灭 Mac 的屏幕」", { m().toggleDisablePhysical(true) }, {
+            (store.config.shouldDisablePhysical && m().fallbackAvailable) ? nil : "disablePhysical=\(store.config.shouldDisablePhysical)" }))
+        steps.append(("展开「找回屏幕的方法」", { m().toggle(.fallback) }, {
+            heights["找回"] = h(); return (m().expanded == .fallback && h() > heights["收起"]! + 300) ? nil : "高度=\(h())" }))
+        steps.append(("关闭熄灭开关时自动收起「找回屏幕的方法」", { m().toggleDisablePhysical(false) }, {
+            (m().expanded == nil && !store.config.shouldDisablePhysical) ? nil : "expanded=\(String(describing: m().expanded))" }))
+        steps.append(("打开后台守护", { m().toggleDisablePhysical(true); m().toggleWatchdog(true) }, {
+            (store.config.shouldRunWatchdog && WatchdogAgent.isLoaded) ? nil : "已加载=\(WatchdogAgent.isLoaded)" }))
+        steps.append(("后台守护开始值守（等心跳）", { RunLoop.main.run(until: Date().addingTimeInterval(4)); m().refresh() }, {
+            m().watchdogRunning ? nil : "watchdogRunning=false" }))
+        steps.append(("关闭后台守护", { m().toggleWatchdog(false) }, {
+            (!store.config.shouldRunWatchdog && !WatchdogAgent.isLoaded) ? nil : "仍已加载" }))
+        steps.append(("「立即恢复所有屏幕」按钮", { m().restorePhysical?() }, { restored ? nil : "未调用" }))
+        steps.append(("「权限设置」按钮", { m().openPermissions?() }, { openedPermissions ? nil : "未调用" }))
+        steps.append(("「功能介绍」按钮", { m().openTour?() }, { openedTour ? nil : "未调用" }))
+        steps.append(("「关于 UU远程伴侣」按钮", { m().showAbout() }, {
+            NSApp.windows.contains { $0.isVisible && $0 !== self.settings.currentWindow && $0.frame.width > 200 } ? nil : "没有出现关于面板" }))
+        steps.append(("设备配置「保存」按钮", { m().saveDevices() }, { m().savedHint ? nil : "没有显示「已保存」" }))
+
+        var i = 0
+        func next() {
+            guard i < steps.count else {
+                Log.info("—— 设置窗口自测完成：\(results.filter { $0.hasPrefix("✅") }.count)/\(steps.count) 通过")
+                results.forEach { Log.info($0) }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { exit(0) }
+                return
+            }
+            let (name, act, check) = steps[i]
+            act()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                let r = check()
+                results.append(r == nil ? "✅ \(name)" : "❌ \(name)：\(r!)")
+                i += 1
+                next()
+            }
+        }
+        next()
     }
 
     /// 压测：随机连入/换设备/断开，间隔 0.3–6 秒，制造上一轮未收尾就进入下一轮的情况

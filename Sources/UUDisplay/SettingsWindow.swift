@@ -478,6 +478,9 @@ struct SettingsView: View {
 final class SettingsWindowController {
     private var window: NSWindow?
     private var model: SettingsModel?
+    /// 自测用：当前设置窗口的模型与窗口
+    var currentModel: SettingsModel? { model }
+    var currentWindow: NSWindow? { window }
     var openPermissions: (() -> Void)?
     var openTour: (() -> Void)?
     var onConfigChanged: (() -> Void)?
