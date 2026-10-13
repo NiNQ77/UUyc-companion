@@ -4,9 +4,9 @@
 
 # UU远程伴侣（UUyc companion）
 
-**用平板或手机通过 UU远程 操控 Mac 时，自动准备一块尺寸刚好的屏幕。**
+**改善 Mac 版 UU远程 的使用体验，远程开始时自动提供与您的设备同分辨率的虚拟屏幕，告别上下大黑边。**
 
-画面铺满、没有黑边、文字清晰；断开后一切恢复原样。
+画面铺满、没有黑边、文字清晰；断开后一切恢复原样。可选自动关闭其他屏幕，告别远程时Dock栏和窗口跑不见。
 
 [![最新版本](https://img.shields.io/github/v/release/aoyamashou/UUyc-companion?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/aoyamashou/UUyc-companion/releases/latest)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
