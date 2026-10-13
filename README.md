@@ -25,9 +25,9 @@
 
 UU远程 的 Mac 被控端没有 Windows 版那样的「超级屏」（虚拟屏幕）功能，所以有了这个小工具：
 
-- 平板或手机一连上，它就自动准备一块和你的设备**尺寸完全一致**的虚拟屏幕，远程画面刚好铺满
-- 可以选择在远程期间**只保留虚拟屏**（暂时关闭 Mac 自己的屏幕和外接显示器），窗口不会跑到你看不见的地方
-- 断开后，屏幕、窗口位置、显示器排列**全部自动还原**
+- 平板或手机一连上，它就自动准备一块和你的设备**分辨率完全一致**的虚拟屏幕，远程画面刚好铺满、文字清晰（HiDPI）
+- 可以选择在远程期间**只保留虚拟屏**（暂时关闭 Mac 自己的屏幕和外接显示器），Dock 栏和窗口不会跑到你看不见的地方
+- 远程结束后，屏幕、窗口位置、显示器排列**全部自动还原**
 
 <div align="center">
 <img src="docs/images/tour-welcome.png" width="45%" alt="功能介绍：欢迎">
@@ -38,12 +38,13 @@ UU远程 的 Mac 被控端没有 Windows 版那样的「超级屏」（虚拟屏
 
 | 功能 | 说明 |
 | --- | --- |
-| 🖥️ 自动准备虚拟屏幕 | 认出连进来的是哪台设备，几秒内换上合适尺寸的屏幕，高清显示 |
+| 🖥️ 自动准备虚拟屏 | 认出远程的是哪台设备，几秒内准备好同分辨率的高清（HiDPI）虚拟屏 |
 | 📱 每台设备单独设置 | 从 UU远程 导入已登录的设备，为平板和手机填写分辨率，改完自动保存 |
-| 💻 用电脑连接时不打扰 | 用另一台电脑连接时，什么也不做 |
+| 💻 不打扰其他连接 | 电脑、没填分辨率或不在列表里的设备连上时，什么也不做，交给 UU远程 处理 |
 | 🌑 远程时只保留虚拟屏 | 可选。远程期间关闭除虚拟屏之外的所有屏幕，远程结束后自动恢复 |
-| ⌨️ 一键找回屏幕 | 坐在 Mac 前按 **⌃ control + ⌥ option + ⌘ command + 9**，所有屏幕立刻亮起来 |
+| ⌨️ 快捷键人肉兜底 | 有人在 Mac 前时按 **⌃ control + ⌥ option + ⌘ command + 9**，所有屏幕立刻恢复 |
 | 🛡️ 守护助手 | 可选。万一程序意外退出或卡住，守护助手会自动把屏幕点亮 |
+| 🚀 快速上手 | 设置窗口里一键查看 5 步上手说明 |
 | 🔒 不联网 | 不连接任何服务器，不收集任何数据，作者对你的隐私没有任何兴趣 |
 
 ## 截图
@@ -51,6 +52,8 @@ UU远程 的 Mac 被控端没有 Windows 版那样的「超级屏」（虚拟屏
 <div align="center">
 <img src="docs/images/settings.png" width="80%" alt="设置窗口">
 <p><sub>设置窗口：上面的图示说明了工作方式，点按钮展开对应的设置</sub></p>
+<img src="docs/images/settings-mac.png" width="80%" alt="设置被控端">
+<p><sub>设置被控端：开机启动、自动准备虚拟屏、远程时关闭除虚拟屏之外的所有屏幕</sub></p>
 <img src="docs/images/settings-devices.png" width="80%" alt="为已登录UU远程的设备指定虚拟屏分辨率">
 <p><sub>设备页：和 UU远程「全部设备」一样的分组，为平板和手机填写分辨率</sub></p>
 <img src="docs/images/settings-recover.png" width="80%" alt="恢复兜底">
@@ -104,9 +107,19 @@ xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"
 1. **功能介绍**：5 页图文，介绍它能做什么
 2. **授权**：允许它读取 UU远程 里显示的设备名称。点「授权」后会打开系统设置，旁边出现一个小窗口，把里面的 UU远程伴侣 拖进列表就好
    - 这一项在 macOS 27 里叫「**设备控制和数据访问**」，更早的版本叫「**辅助功能**」
-3. **为已登录UU远程的设备指定虚拟屏分辨率**：软件会自动从 UU远程「全部设备」导入已登录的设备，并自动保存。平板和手机的**分辨率需要你自己填写**，见下一节
+3. **控制端设置**：软件会自动从 UU远程「全部设备」导入已登录的设备，并自动保存。平板和手机的**分辨率需要你自己填写**，见下一节
 
 之后它会待在**菜单栏**里（图标是两块叠在一起的屏幕），平板或手机连上就会自动工作。
+
+### 快速上手
+
+设置窗口里点「**快速上手**」也能看到这几步：
+
+1. 将您所有打算用于远程的平板、手机、电脑，都下载并登录同一个 UU远程 帐号
+2. 本软件会自动读取已登录的设备列表
+3. 咨询 AI 您设备的物理分辨率，并将分辨率填入列表中
+4. 启用「自动准备虚拟屏」功能，远程时就会实现无黑边且高清（HiDPI）的画面
+5. 如果不想远程时切换屏幕，打开「远程时关闭除虚拟屏之外的所有屏幕」功能
 
 ### 填写每台设备的分辨率（重要）
 
@@ -119,7 +132,7 @@ xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"
 
 查分辨率并填写：
 
-1. **查分辨率**：最省事的办法是问问 AI，例如「iPad Air 11 英寸（M4）的屏幕物理分辨率是多少？」；也可以看设备的官方规格页
+1. **查分辨率**：最省事的办法是问问 AI：「<我的设备名称及型号>的屏幕物理分辨率是多少？」；也可以看设备的官方规格页
 2. 点菜单栏图标 › **设置…** › **控制端设置**
 3. 在这台设备那一行填写两个数字，单位是**像素**：
    - 按**横屏**填写：**大的数字填前面，小的填后面**
@@ -133,6 +146,15 @@ xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"
 >
 > 填的比例和设备屏幕对不上时，远程画面会出现黑边。按上面的步骤改正即可，不会造成其他影响。
 
+### 菜单栏
+
+点菜单栏图标，菜单里有：
+
+- **状态**：例如「等待其它设备连接中」「iPad Air 已连接 · 虚拟屏已匹配 2360×1640 高清」
+- **远程时只保留虚拟屏**：开关
+- **设置…**
+- **完全退出**：守护助手也会一起停下
+
 ### 设置
 
 点菜单栏图标 › **设置…**
@@ -140,6 +162,7 @@ xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"
 - **控制端设置**：从 UU远程 导入已登录的设备，为平板和手机指定虚拟屏分辨率
 - **设置被控端**：开机启动、自动准备虚拟屏、远程时关闭除虚拟屏之外的所有屏幕
 - **恢复兜底**：打开「远程时关闭除虚拟屏之外的所有屏幕」后才能点，可以在这里打开守护助手
+- 下方按钮：立即恢复所有屏幕、权限设置、功能介绍、快速上手、关于 UU远程伴侣、完全退出
 
 ### 万一屏幕没有亮回来
 
@@ -153,9 +176,9 @@ xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"
 
 ## 注意事项
 
-- **使用了 macOS 未公开的接口**：创建虚拟屏幕、熄灭屏幕都依赖 macOS 没有公开的系统接口。macOS 大版本升级后可能失效，建议升级系统后先简单测试一次
-- **熄灭屏幕是可选功能，请先了解找回方法**：开发过程中，在极端情况下（短时间内反复增减屏幕）曾遇到 macOS 显示服务重启，表现为被注销到登录界面。现在的版本已经加了多重保护并通过压力测试，但无法完全排除这种可能。**远程前请保存好重要工作**
-- **不是网易官方软件**：本软件与网易、UU远程没有任何关系。它通过读取 UU远程 窗口上的文字来识别设备，如果 UU远程 改版，可能会读不到设备名
+- **使用了 macOS 未公开的接口**：创建虚拟屏、关闭其他屏幕都依赖 macOS 没有公开的系统接口。macOS 大版本升级后可能失效，建议升级系统后先简单测试一次
+- **关闭其他屏幕是可选功能，请先了解恢复方法**：开发过程中，在极端情况下（短时间内反复增减屏幕）曾遇到 macOS 显示服务重启，表现为被注销到登录界面。现在的版本已经加了多重保护并通过压力测试，但无法完全排除这种可能。**远程前请保存好重要工作**
+- **不是网易官方软件**：本软件与 UU远程 及其开发商没有任何直接、间接或连带关系，仅为作者自己使用方便而开发。如果将来 UU远程 官方在 Mac 版中内置了同样的功能，删掉本软件即可。它通过读取 UU远程 窗口上的文字来识别设备，如果 UU远程 改版，可能会读不到设备名
 - **隐私**：不联网、不收集任何数据。授权后只用来读取 UU远程 窗口里显示的设备名称
 - **守护助手**：打开后会在「系统设置 › 通用 › 登录项与扩展」里出现，macOS 会提示「UUDisplayWatchdog 已添加后台项目」，这是正常的
 
@@ -221,6 +244,7 @@ cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 
 - `SIGN_IDENTITY=-` 表示用 ad-hoc 签名。缺点是每次重新构建后，系统授权都会失效，需要重新授权。如果你有自己的代码签名证书，把 `-` 换成证书名称，升级后授权就能保留
 - 只装了命令行工具（没有完整 Xcode）也能构建：内置的 PermissionFlow 和 TourKit 已经把需要 Xcode 宏插件的写法改掉了，详见各自目录下的 `VENDORED.md`
+- 「关于」窗口依赖作者的私有模块 AboutKit，目前只有作者本人能从源码完整构建；直接下载 Releases 里的安装包即可正常使用
 
 <details>
 <summary><b>工作原理</b></summary>
@@ -228,7 +252,7 @@ cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 - **检测连接**：UU远程 被操控时，会在每块屏幕上铺一层透明窗口，本软件据此判断有没有设备连上
 - **识别设备**：通过 macOS 辅助功能接口读取 UU远程 窗口里「本机被控中」显示的设备名称
 - **虚拟屏幕**：用 CoreGraphics 未公开的 `CGVirtualDisplay` 创建一块指定分辨率的高清屏幕，并设为主屏幕
-- **熄灭屏幕**：用未公开的 `CGSConfigureDisplayEnabled` 暂时停用其他显示器；停用前会把要恢复的屏幕记下来
+- **关闭其他屏幕**：用未公开的 `CGSConfigureDisplayEnabled` 暂时停用其他显示器；停用前会把要恢复的屏幕记下来
 - **守护助手**：一个独立的 LaunchAgent 进程，每 5 秒检查一次，发现主程序退出、卡住或 UU远程 已断开时，按记录恢复屏幕
 </details>
 
@@ -237,7 +261,6 @@ cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 - [FreeDisplay](https://github.com/huberdf/FreeDisplay)（MIT）：`CGVirtualDisplay` 接口声明
 - [PermissionFlow](https://github.com/jaywcjlove/PermissionFlow)（MIT）：授权引导与拖拽授权面板
 - [TourKit](https://github.com/rampatra/TourKit)（MIT）：功能介绍页
-- [AboutKit](https://github.com/aoyamashou/AboutKit)（MIT）：「关于」窗口与 Debug 编号
 - 虚拟屏幕的实现思路参考了 [DeskPad](https://github.com/Stengo/DeskPad)、[Side Screen](https://github.com/tranvuongquocdat/SideScreen) 和 Chromium 的相关代码
 
 ## 许可证
@@ -250,9 +273,9 @@ cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 
 **UUyc companion** is a macOS menu bar utility for people who control their Mac from an iPad or phone with [UU Remote](https://uuyc.163.com/) (NetEase).
 
-When a tablet or phone connects, it creates a HiDPI virtual display that exactly matches the device's resolution and makes it the main display, so the remote view fills the screen with no black bars. It can optionally turn off the Mac's own displays during the session, and everything is restored when the session ends.
+When a tablet or phone connects, it creates a HiDPI virtual display that exactly matches the device's resolution and makes it the main display, so the remote view fills the screen with no black bars. It can optionally turn off all other displays during the session, so the Dock and windows never end up on a screen you can't see. Everything is restored when the session ends.
 
-- Reads the device list from UU Remote and pre-fills a resolution for each device; computers are left alone
+- Imports the logged-in devices from UU Remote; you enter each tablet's or phone's native resolution. Computers and unknown devices are left alone
 - Emergency shortcut **⌃⌥⌘9** turns all displays back on; an optional background watchdog restores them if the app crashes or hangs
 - No network access, no data collection
 - Requires macOS 14+; tested on macOS 27 (Apple Silicon)
