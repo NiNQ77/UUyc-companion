@@ -295,11 +295,11 @@ struct ControlledPanel: View {
             }
             Divider()
             row("自动准备虚拟屏",
-                "远程开始时自动准备虚拟屏供平板或手机使用，确保远程时上下无黑边且文字清晰；远程结束时会自动关闭。",
+                "远程开始时自动准备名为\"UUyc Companion\"的虚拟屏，供平板或手机使用，须手工选择此屏幕，则可实现远程时上下无黑边且文字清晰；\n远程结束时会自动关闭。",
                 isOn: Binding(get: { model.autoVirtual }, set: { model.toggleAutoVirtual($0) }))
             Divider()
             row("远程时关闭除虚拟屏之外的所有屏幕",
-                "确保远程时所有内容只显示在虚拟屏中，避免切换屏幕及窗口跑不见；远程结束时自动恢复。担心恢复失败，可以在「恢复兜底」里打开守护助手。",
+                "若不想手工选择虚拟屏，或者想确保远程时所有内容只显示在虚拟屏中，请打开此功能；远程结束时自动恢复。\n若担心恢复失败，可以在「恢复兜底」里打开守护助手。",
                 isOn: Binding(get: { model.disablePhysical }, set: { model.toggleDisablePhysical($0) }),
                 enabled: model.autoVirtual)
             if !model.autoVirtual {
@@ -378,11 +378,10 @@ struct FallbackPanel: View {
 
 private struct QuickStartView: View {
     private let steps = [
-        "将您所有打算用于远程的平板、手机、电脑，都下载并登录同一个UU远程帐号。",
-        "本软件会自动读取已登录的设备列表。",
-        "咨询AI您设备的物理分辨率，并将分辨率填入列表中。",
-        "启用“自动准备虚拟屏”功能，远程时就会实现无黑边且高清（HiDPI）的画面。",
-        "如果不想远程时切换屏幕，打开“远程时关闭除虚拟屏之外的所有屏幕”功能。",
+        "将所有打算用于远程的平板、手机、电脑，都下载并登录同一个UU远程帐号，本软件会自动读取已登录的设备列表。",
+        "咨询AI您设备的物理分辨率，并将分辨率填入列表中。不要除以2，填查到的分辨率就好。",
+        "启用“自动准备虚拟屏”功能，远程时会多一个名为\"UUyc Companion\"的虚拟屏幕，选择它就会实现无黑边的高清的画面。",
+        "若不想手工切，或多显示器下，遇上窗口跑不见，Dock栏到处跑的情况，请打开“远程时关闭除虚拟屏之外的所有屏幕”功能。",
     ]
 
     var body: some View {
