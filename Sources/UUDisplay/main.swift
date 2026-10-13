@@ -51,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.restorePhysical = { [weak self] in self?.coordinator.restorePhysical() }
         settings.openTour = { [weak self] in self?.tour.show() }
         coordinator.onChange = { [weak self] in self?.statusBar?.refresh() }
-        DebugLabels.start()
+        AboutPage.setUpDebugLabels()
 
         // 心跳：看门狗据此判断主程序是否卡死（主线程定时器，卡住即停跳）
         Heartbeat.beat(Heartbeat.appURL)
@@ -61,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let args = CommandLine.arguments
         // 调试：渲染设置窗口各面板后退出：--render-settings <目录>
         if let i = args.firstIndex(of: "--render-about"), i + 1 < args.count {
-            AboutWindowController.render(to: URL(fileURLWithPath: args[i + 1]))
+            AboutPage.render(to: URL(fileURLWithPath: args[i + 1]))
             exit(0)
         }
         if let i = args.firstIndex(of: "--render-settings"), i + 1 < args.count {
@@ -240,6 +240,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         steps.append(("「立即恢复所有屏幕」按钮", { m().restorePhysical?() }, { restored ? nil : "未调用" }))
         steps.append(("「权限设置」按钮", { m().openPermissions?() }, { openedPermissions ? nil : "未调用" }))
         steps.append(("「功能介绍」按钮", { m().openTour?() }, { openedTour ? nil : "未调用" }))
+        steps.append(("「快速上手」按钮弹出说明", { m().quickStartShown = true }, {
+            let shown = NSApp.windows.contains { $0.isVisible && $0.className.contains("Popover") }
+            m().quickStartShown = false
+            return shown ? nil : "没有弹出说明气泡"
+        }))
         steps.append(("「关于 UU远程伴侣」按钮", { m().showAbout() }, {
             NSApp.windows.contains { $0.isVisible && $0 !== self.settings.currentWindow && $0.frame.width > 200 } ? nil : "没有出现关于面板" }))
         steps.append(("设备列表修改后自动保存", {

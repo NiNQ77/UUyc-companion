@@ -23,6 +23,7 @@ final class SettingsModel: ObservableObject {
     @Published var watchdogRunning = Watchdog.isRunning
     @Published var physicalOff = PhysicalDisplays.pending != nil
     @Published var savedHint = false
+    @Published var quickStartShown = false
 
     let devices = WizardModel()
     var onConfigChanged: (() -> Void)?
@@ -107,7 +108,7 @@ final class SettingsModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.refresh() }
     }
 
-    func showAbout() { AboutWindowController.shared.show() }
+    func showAbout() { AboutPage.show() }
 
     /// 完全退出：停掉本次登录中的看门狗（不卸载，下次打开 App 或重新登录时恢复），再退出主程序
     func quitCompletely() {
@@ -373,6 +374,32 @@ struct FallbackPanel: View {
     }
 }
 
+// MARK: - 快速上手
+
+private struct QuickStartView: View {
+    private let steps = [
+        "将您所有打算用于远程的平板、手机、电脑，都下载并登录同一个UU远程帐号。",
+        "本软件会自动读取已登录的设备列表。",
+        "咨询AI您设备的物理分辨率，并将分辨率填入列表中。",
+        "启用“自动准备虚拟屏”功能，远程时就会实现无黑边且高清（HiDPI）的画面。",
+        "如果不想远程时切换屏幕，打开“远程时关闭除虚拟屏之外的所有屏幕”功能。",
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("快速上手").font(.headline)
+            ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("\(i + 1).").monospacedDigit().foregroundStyle(.secondary)
+                    Text(step).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(18)
+        .frame(width: 420)
+    }
+}
+
 // MARK: - 整体
 
 struct SettingsView: View {
@@ -444,6 +471,8 @@ struct SettingsView: View {
                 .help(model.physicalOff ? "也可以按 ⌃ control + ⌥ option + ⌘ command + 9" : "现在没有熄灭的屏幕")
                 Button { model.openPermissions?() } label: { Label("权限设置", systemImage: "hand.raised") }
                 Button { model.openTour?() } label: { Label("功能介绍", systemImage: "sparkles") }
+                Button { model.quickStartShown.toggle() } label: { Label("快速上手", systemImage: "list.number") }
+                    .popover(isPresented: $model.quickStartShown, arrowEdge: .bottom) { QuickStartView() }
             }
             .controlSize(.large)
             .padding(.vertical, 16)

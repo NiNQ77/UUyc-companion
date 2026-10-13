@@ -237,6 +237,7 @@ cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 - [FreeDisplay](https://github.com/huberdf/FreeDisplay)（MIT）：`CGVirtualDisplay` 接口声明
 - [PermissionFlow](https://github.com/jaywcjlove/PermissionFlow)（MIT）：授权引导与拖拽授权面板
 - [TourKit](https://github.com/rampatra/TourKit)（MIT）：功能介绍页
+- [AboutKit](https://github.com/aoyamashou/AboutKit)（MIT）：「关于」窗口与 Debug 编号
 - 虚拟屏幕的实现思路参考了 [DeskPad](https://github.com/Stengo/DeskPad)、[Side Screen](https://github.com/tranvuongquocdat/SideScreen) 和 Chromium 的相关代码
 
 ## 许可证

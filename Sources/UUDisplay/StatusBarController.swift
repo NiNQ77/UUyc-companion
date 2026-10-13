@@ -1,4 +1,5 @@
-// 菜单栏：状态 / 远程接入时只保留虚拟屏 / 设置 / 退出
+// 菜单栏：状态 / 远程时只保留虚拟屏 / 设置 / 完全退出
+import AboutKit
 import AppKit
 
 final class StatusBarController: NSObject, NSMenuDelegate {
