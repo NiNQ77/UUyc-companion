@@ -13,7 +13,7 @@
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-%E6%94%AF%E6%8C%81-success)
 [![许可证 MIT](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-green)](LICENSE)
 
-[下载](#下载) · [安装](#安装) · [使用](#使用) · [注意事项](#注意事项) · [常见问题](#常见问题) · [English](#english)
+[下载](#下载) · [安装](#安装) · [使用](#使用) · [注意事项](#注意事项) · [常见问题](#常见问题)
 
 </div>
 
@@ -266,21 +266,3 @@ cd UUyc-companion && SIGN_IDENTITY=- scripts/build-app.sh
 ## 许可证
 
 [MIT](LICENSE) © 2026 AoyamaShou
-
----
-
-## English
-
-**UUyc companion** is a macOS menu bar utility for people who control their Mac from an iPad or phone with [UU Remote](https://uuyc.163.com/) (NetEase).
-
-When a tablet or phone connects, it creates a HiDPI virtual display that exactly matches the device's resolution and makes it the main display, so the remote view fills the screen with no black bars. It can optionally turn off all other displays during the session, so the Dock and windows never end up on a screen you can't see. Everything is restored when the session ends.
-
-- Imports the logged-in devices from UU Remote; you enter each tablet's or phone's native resolution. Computers and unknown devices are left alone
-- Emergency shortcut **⌃⌥⌘9** turns all displays back on; an optional background watchdog restores them if the app crashes or hangs
-- No network access, no data collection
-- Requires macOS 14+; tested on macOS 27 (Apple Silicon)
-- Uses private macOS APIs (`CGVirtualDisplay`, `CGSConfigureDisplayEnabled`) that may break with future macOS releases
-- Self-signed and not notarized. If macOS blocks it on first launch, allow it in *System Settings › Privacy & Security*, or run `xattr -dr com.apple.quarantine "/Applications/UUyc companion.app"`
-- Not affiliated with NetEase or UU Remote
-
-The user interface is in Simplified Chinese. Licensed under [MIT](LICENSE).
