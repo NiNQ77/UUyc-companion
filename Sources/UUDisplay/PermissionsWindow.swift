@@ -89,7 +89,7 @@ struct PermissionsView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("允许 UU远程伴侣 读取设备名称").font(.title2.bold())
-                Text("这样平板或手机连上时，它才能认出是哪台设备，并换上合适的屏幕尺寸。")
+                Text("远程开始时，才能认出是哪台设备，并准备对应分辨率的虚拟屏。")
                     .foregroundStyle(.secondary)
             }
 
@@ -103,7 +103,7 @@ struct PermissionsView: View {
                 ok: model.axGranted,
                 okText: "已授权",
                 pendingText: "未授权",
-                tip: "点「授权」会打开系统设置，旁边会出现一个小窗口，把里面的 UU远程伴侣 拖进列表就好。\n如果列表里已经有 UU远程伴侣 或 UUDisplay（旧名字），开关也开着，却还是显示未授权：先选中它，点「−」删掉，再拖一次。"
+                tip: "点「授权」会打开系统设置，旁边会出现一个小窗口，把里面的 UU远程伴侣 拖进列表就好。\n如果列表里已经有 UU远程伴侣，开关也开着，却还是显示未授权：先选中它，点「−」删掉，再拖一次。"
             ) {
                 PermissionFlowButton(
                     pane: .accessibility,

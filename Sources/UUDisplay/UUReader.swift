@@ -6,6 +6,8 @@ struct UUDevice: Hashable {
     let name: String
     let isComputerGroup: Bool
     let isSelf: Bool
+    /// UU 图标里的系统类型：macos / ios / android / windows…
+    var platform: String = ""
 }
 
 enum UUReader {
@@ -69,21 +71,33 @@ enum UUReader {
 
         var group: Bool?  // true = 电脑组
         var pendingIcon = false
+        var pendingPlatform = ""
+        var pendingY: CGFloat = 0
+        var ys: [String: CGFloat] = [:]  // AX 顺序与界面相反，按图标的纵坐标排回 UU 的显示顺序
         var result: [UUDevice] = []
         for el in all {
             switch role(el) {
             case kAXImageRole:
                 let d = attr(el, kAXDescriptionAttribute) as? String ?? ""
                 pendingIcon = d.hasPrefix("icon device") && d.contains(" 32")
+                if pendingIcon {
+                    pendingPlatform = d.split(separator: " ").dropFirst(2).first.map(String.init) ?? ""
+                    var pt = CGPoint.zero
+                    if let v = attr(el, kAXPositionAttribute), CFGetTypeID(v) == AXValueGetTypeID() {
+                        AXValueGetValue(v as! AXValue, .cgPoint, &pt)
+                    }
+                    pendingY = pt.y
+                }
             case kAXStaticTextRole:
                 guard let v = value(el)?.trimmingCharacters(in: .whitespaces), !v.isEmpty else { continue }
                 if v == "电脑" { group = true; pendingIcon = false }
                 else if v == "手机/平板" { group = false; pendingIcon = false }
                 else if v == "本机", let last = result.popLast() {
-                    result.append(UUDevice(name: last.name, isComputerGroup: last.isComputerGroup, isSelf: true))
+                    result.append(UUDevice(name: last.name, isComputerGroup: last.isComputerGroup, isSelf: true, platform: last.platform))
                 } else if pendingIcon, let g = group {
                     if !result.contains(where: { $0.name == v }) {
-                        result.append(UUDevice(name: v, isComputerGroup: g, isSelf: false))
+                        result.append(UUDevice(name: v, isComputerGroup: g, isSelf: false, platform: pendingPlatform))
+                        ys[v] = pendingY
                     }
                     pendingIcon = false
                 }
@@ -91,7 +105,7 @@ enum UUReader {
                 break
             }
         }
-        return result
+        return result.enumerated().sorted { (ys[$0.element.name] ?? 0, $0.offset) < (ys[$1.element.name] ?? 0, $1.offset) }.map(\.element)
     }
 
     /// 读取「本机被控中」表格里的控制端设备名。主窗口不存在返回 nil，无人控制返回 []

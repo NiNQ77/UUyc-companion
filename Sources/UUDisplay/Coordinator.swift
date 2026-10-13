@@ -1,5 +1,5 @@
 // 连入/断开 → 选设备配置 → 建屏/还原
-// 设备名通常与连入同秒出现；读不到时先按「上次连入设备」或「默认设备」建屏，名称出现后不一致再重建
+// 只处理 UU 设备列表里、且填了分辨率的设备；读不到名字或认不出就不调整，交给 UU远程 自己处理
 import AppKit
 
 final class Coordinator {
@@ -13,7 +13,6 @@ final class Coordinator {
     private(set) var controllerName: String?
     private var namePoll: Timer?
     private var connectedAt = Date.distantPast
-    private var usedFallback = false
     private var openedUUWindow = false
 
     /// 调试：模拟连入的控制端名称（不读 UU）
@@ -35,14 +34,14 @@ final class Coordinator {
     }
 
     var statusText: String {
-        if display.wedged { return "⛔️ 屏幕设置暂时卡住了，请重启 Mac" }
-        if store.config.paused { return "已暂停：连接时不做调整" }
-        guard connected else { return "等待平板或手机连接" }
+        if display.wedged { return "⛔️ 屏幕设置无响应，请重启 Mac" }
+        if store.config.paused { return "虚拟屏已暂停：连接时不做调整" }
+        guard connected else { return "等待其它设备连接中" }
         let who = controllerName ?? "未知设备"
         if let c = display.current, display.isActive {
-            return "\(who) 已连接 · 屏幕已换成 \(c.sizeLabel)\(display.physicalOff ? " · Mac 屏幕已熄灭" : "")"
+            return "\(who) 已连接 · 虚拟屏已匹配 \(c.sizeLabel)\(display.physicalOff ? " · 物理屏幕已软关闭" : "")"
         }
-        return "\(who) 已连接 · 屏幕没有调整"
+        return "\(who) 已连接 · 虚拟屏没有调整"
     }
 
     // MARK: - 事件
@@ -50,7 +49,6 @@ final class Coordinator {
     func handleConnect() {
         connectedAt = Date()
         controllerName = nil
-        usedFallback = false
         openedUUWindow = false
         onChange?()
         guard !store.config.paused else { return }
@@ -78,13 +76,6 @@ final class Coordinator {
         if let name = simulatedName ?? readControllerName() {
             resolve(name)
             return true
-        }
-        // 2 秒还没名字：先按上次/默认设备建屏，继续等名字
-        if elapsed >= 2, !usedFallback {
-            usedFallback = true
-            let fallback = store.device(named: store.config.lastDevice) ?? store.device(named: store.config.defaultDevice)
-            Log.info("暂未读到控制端名称，先按「\(fallback?.name ?? "无")」处理")
-            apply(fallback)
         }
         if elapsed >= 30 {
             Log.info("30 秒内未读到控制端名称，停止等待")
@@ -115,21 +106,21 @@ final class Coordinator {
         let cfg: DeviceConfig?
         if let known = store.device(named: name) {
             cfg = known
-            store.config.lastDevice = name
         } else if simulatedName != nil {
-            cfg = DeviceConfig.make(name: name, kind: Presets.guessKind(name: name, isComputerGroup: false))
+            // 调试模拟：未配置的名称用固定测试尺寸
+            cfg = DeviceConfig(name: name, kind: .tablet, width: 2360, height: 1640)
         } else {
-            cfg = store.device(named: store.config.defaultDevice)
-            Log.info("「\(name)」未配置，使用默认设备「\(cfg?.name ?? "无")」")
+            cfg = nil
+            Log.info("「\(name)」不在设备列表里，不调整")
         }
         apply(cfg)
     }
 
     private func apply(_ cfg: DeviceConfig?) {
         defer { onChange?() }
-        guard let cfg, cfg.kind != .computer else {
+        guard let cfg, cfg.kind != .computer, cfg.hasSize else {
             if display.isActive { display.remove() }
-            Log.info(cfg == nil ? "无可用配置，不切换" : "「\(cfg!.name)」是电脑，不切换")
+            Log.info(cfg == nil ? "无可用配置，不切换" : "「\(cfg!.name)」不指定分辨率或还没填写，不切换")
             return
         }
         if display.matches(cfg) { return }

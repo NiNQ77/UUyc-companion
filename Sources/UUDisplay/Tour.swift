@@ -7,15 +7,15 @@ import TourKit
 enum Tour {
     static let pages: [(image: String, title: LocalizedStringKey, description: LocalizedStringKey)] = [
         ("tour-welcome", "欢迎使用 UU远程伴侣",
-         "用平板或手机通过 UU远程 操控这台 Mac 时，它会自动准备一块和你的设备尺寸完全一致的屏幕。"),
+         "使用 UU远程 时，自动为您的平板或手机准备一块对应大小的虚拟屏幕。"),
         ("tour-match", "一连上，画面就刚好铺满",
-         "认出连进来的是哪台设备，几秒内换上合适的屏幕，没有黑边、文字清晰；断开后一切恢复原样。"),
-        ("tour-physical", "远程时只留一块屏幕",
-         "可以在设置里打开：远程期间暂时熄灭 Mac 自己的屏幕和外接显示器，窗口不会跑到你看不见的地方。用电脑连接时不受影响。"),
-        ("tour-safety", "万一出问题，也能马上找回",
-         "坐在 Mac 前按 ⌃ control + ⌥ option + ⌘ command + 9，所有屏幕立刻亮起来；还可以打开后台守护自动照看；重启 Mac 也一定能恢复。"),
+         "认出远程的设备，生成合适的虚拟屏，获得没有黑边、文字清晰的远程体验；远程结束后恢复原样。"),
+        ("tour-physical", "远程时只保留虚拟屏",
+         "避免远程时在屏幕间切换，避免窗口跑不见。"),
+        ("tour-safety", "万一崩溃出问题，也有兜底",
+         "按 ⌃ control + ⌥ option + ⌘ command + 9，即可恢复所有屏幕；并提供守护助手自动监控。"),
         ("tour-setup", "还差两步就能用了",
-         "先允许它读取设备名称，再确认每台设备的屏幕尺寸。之后随时可以点菜单栏图标修改设置，或再看一遍介绍。"),
+         "请允许 UU远程伴侣 读取您用于远程的设备列表，再为平板和手机填写分辨率。点菜单栏图标可修改设置。"),
     ]
 
     static let artworks: [String: AnyView] = [
@@ -210,7 +210,7 @@ private struct MatchArt: View {
                     Screen(width: 300, height: 208) {
                         VStack(spacing: 6) {
                             Text("2360 × 1640").font(.system(size: 30, weight: .bold, design: .rounded))
-                            Text("高清").font(.system(size: 15, weight: .semibold, design: .rounded)).opacity(0.85)
+                            Text("高清（HiDPI ON）").font(.system(size: 15, weight: .semibold, design: .rounded)).opacity(0.85)
                         }
                         .foregroundStyle(.white)
                     }
@@ -301,8 +301,8 @@ private struct SetupArt: View {
     var body: some View {
         ArtBackground(tint: .blue) {
             VStack(spacing: 18) {
-                Row(symbol: "hand.raised.fill", title: "允许读取设备名称")
-                Row(symbol: "rectangle.on.rectangle", title: "确认屏幕尺寸")
+                Row(symbol: "hand.raised.fill", title: "允许读取设备列表")
+                Row(symbol: "rectangle.on.rectangle", title: "填写设备分辨率")
             }
         }
     }

@@ -6,6 +6,8 @@
 //      UUDisplay --watchdog                    看门狗模式（由 launchd 托管）
 //      UUDisplay --render-tour <目录>           渲染功能导览配图（Assets/Tour）
 //      UUDisplay --tour                        只展示功能导览
+//      UUDisplay --open-settings [面板]          启动后直接打开设置窗口
+//      UUDisplay --render-about <png>            渲染「关于」窗口
 import AppKit
 import Carbon.HIToolbox
 import PermissionFlow
@@ -19,7 +21,7 @@ if CommandLine.arguments.contains("--dump-devices") {
     guard let devices = UUReader.readDevices() else { print("未读到 UU 主窗口"); exit(1) }
     for d in devices {
         let cfg = DeviceConfig.make(name: d.name, kind: Presets.guessKind(name: d.name, isComputerGroup: d.isComputerGroup))
-        let size = cfg.kind == .computer ? "不切换" : cfg.sizeLabel
+        let size = cfg.kind == .computer ? "不切换" : "分辨率待填写"
         print("\(d.isSelf ? "（本机，排除）" : "")\(d.name)\t→ \(cfg.kind.label)\t\(size)")
     }
     print("控制端：\(UUReader.readControllers() ?? [])")
@@ -41,9 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ note: Notification) {
         Log.info("启动 UUDisplay，辅助功能权限：\(UUReader.isTrusted)")
         statusBar = StatusBarController(coordinator: coordinator,
-                                        openSettings: { [weak self] in self?.settings.show(pane: $0) },
-                                        openPermissions: { [weak self] in self?.permissions.show() },
-                                        openTour: { [weak self] in self?.tour.show() })
+                                        openSettings: { [weak self] in self?.settings.show(pane: $0) })
         settings.openPermissions = { [weak self] in self?.permissions.show() }
         settings.onConfigChanged = { [weak self] in self?.coordinator.configChanged() }
         settings.setDisablePhysical = { [weak self] in self?.coordinator.setDisablePhysical($0) }
@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.restorePhysical = { [weak self] in self?.coordinator.restorePhysical() }
         settings.openTour = { [weak self] in self?.tour.show() }
         coordinator.onChange = { [weak self] in self?.statusBar?.refresh() }
+        DebugLabels.start()
 
         // 心跳：看门狗据此判断主程序是否卡死（主线程定时器，卡住即停跳）
         Heartbeat.beat(Heartbeat.appURL)
@@ -59,6 +60,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let args = CommandLine.arguments
         // 调试：渲染设置窗口各面板后退出：--render-settings <目录>
+        if let i = args.firstIndex(of: "--render-about"), i + 1 < args.count {
+            AboutWindowController.render(to: URL(fileURLWithPath: args[i + 1]))
+            exit(0)
+        }
         if let i = args.firstIndex(of: "--render-settings"), i + 1 < args.count {
             SettingsWindowController.render(to: URL(fileURLWithPath: args[i + 1]))
             exit(0)
@@ -111,6 +116,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let i = args.firstIndex(of: "--simulate"), i + 1 < args.count {
             simulate(name: args[i + 1], seconds: i + 2 < args.count ? Double(args[i + 2]) ?? 10 : 10)
             return
+        }
+
+        // 调试：启动后直接打开设置窗口（配合 Debug 编号检查界面）：--open-settings [controller|controlled|fallback]
+        if let i = args.firstIndex(of: "--open-settings") {
+            let pane = i + 1 < args.count ? SettingsPane(rawValue: args[i + 1]) : nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.settings.show(pane: pane) }
         }
 
         if args.contains("--tour") {
@@ -231,7 +242,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         steps.append(("「功能介绍」按钮", { m().openTour?() }, { openedTour ? nil : "未调用" }))
         steps.append(("「关于 UU远程伴侣」按钮", { m().showAbout() }, {
             NSApp.windows.contains { $0.isVisible && $0 !== self.settings.currentWindow && $0.frame.width > 200 } ? nil : "没有出现关于面板" }))
-        steps.append(("设备配置「保存」按钮", { m().saveDevices() }, { m().savedHint ? nil : "没有显示「已保存」" }))
+        steps.append(("设备列表修改后自动保存", {
+            guard let i = m().devices.rows.firstIndex(where: { $0.kind != .computer }) else { return }
+            m().devices.rows[i].hiDPI.toggle(); m().devices.rows[i].hiDPI.toggle()
+            RunLoop.main.run(until: Date().addingTimeInterval(1.2))
+        }, { m().devices.rows.contains { $0.kind != .computer } ? (m().savedHint ? nil : "没有显示「已自动保存」") : "没有平板/手机设备，跳过" }))
 
         var i = 0
         func next() {
