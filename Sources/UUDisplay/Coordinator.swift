@@ -39,7 +39,7 @@ final class Coordinator {
         guard connected else { return "等待其它设备连接中" }
         let who = controllerName ?? "未知设备"
         if let c = display.current, display.isActive {
-            return "\(who) 已连接 · 虚拟屏已匹配 \(c.sizeLabel)\(display.physicalOff ? " · 物理屏幕已软关闭" : "")"
+            return "\(who) 已连接 · 虚拟屏已匹配 \(c.sizeLabel)\(display.physicalOff ? " · 物理屏幕已镜像同步（保留声音）" : "")"
         }
         return "\(who) 已连接 · 虚拟屏没有调整"
     }

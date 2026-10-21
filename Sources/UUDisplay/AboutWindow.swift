@@ -6,7 +6,10 @@ enum AboutPage {
     private static let controller = AboutWindowController(app: AboutApp(
         name: "UU远程伴侣",
         summary: "改善 Mac 版 UU远程 的使用体验，自动提供与您的设备同分辨率的虚拟屏幕，告别上下大黑边。",
-        repository: "https://github.com/aoyamashou/UUyc-companion",
+        repository: "https://github.com/NiNQ77/UUyc-companion",
+        upstreamRepository: "https://github.com/aoyamashou/UUyc-companion",
+        maintainer: "NiNQ77",
+        maintainerUrl: "https://github.com/NiNQ77",
         credits: [
             OpenSourceCredit(name: "FreeDisplay", url: "https://github.com/huberdf/FreeDisplay",
                              author: "huberdf", license: "MIT", usage: "虚拟屏接口声明"),

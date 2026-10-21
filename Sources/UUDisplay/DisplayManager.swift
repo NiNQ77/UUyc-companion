@@ -258,8 +258,8 @@ final class DisplayManager {
             let physical = DisplayManager.onlineDisplays().filter { !DisplayManager.isVirtual($0) }
             if !physical.isEmpty {
                 return runCG(settle: 1.5) {
-                    let err = PhysicalDisplays.disable(physical)
-                    Log.info(err == .success ? "✅ 已关闭物理屏 \(physical)，只保留虚拟屏 #\(id)" : "⚠️ 关闭物理屏失败 CGError=\(err.rawValue)")
+                    let err = PhysicalDisplays.mirror(physical, to: id)
+                    Log.info(err == .success ? "✅ 已将物理屏 \(physical) 镜像至虚拟屏 #\(id)，保持声音在线" : "⚠️ 镜像物理屏失败 CGError=\(err.rawValue)")
                     return err
                 }
             }
